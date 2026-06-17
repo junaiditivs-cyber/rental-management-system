@@ -1376,8 +1376,8 @@ app.use((err: any, req: any, res: any, next: any) => {
 if (!process.env.VERCEL) {
   ensureDefaultAdmin().then(() => {
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${3000}`);
-      console.log(`Open http://localhost:${3000}`);
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Open http://localhost:${PORT} in your browser to access the Property Management System.`);
     });
   });
 }
