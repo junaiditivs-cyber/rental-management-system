@@ -4,8 +4,7 @@
     "api/index.ts": {
       "includeFiles": [
         "views/**",
-        "server.ts",
-        "src/**"
+        "server.ts"
       ]
     }
   },

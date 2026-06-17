@@ -1372,7 +1372,6 @@ app.use((err: any, req: any, res: any, next: any) => {
 
 // Start Express Listener
 // Start Express Listener only for local development
-// Start Express Listener only for local development
 if (!process.env.VERCEL) {
   ensureDefaultAdmin().then(() => {
     app.listen(PORT, '0.0.0.0', () => {
