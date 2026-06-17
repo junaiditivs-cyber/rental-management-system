@@ -1371,9 +1371,14 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start Express Listener
-ensureDefaultAdmin().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Open http://localhost:${PORT}`);
+// Start Express Listener only for local development
+if (!process.env.VERCEL) {
+  ensureDefaultAdmin().then(() => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Open http://localhost:${PORT}`);
+    });
   });
-});
+}
+
+export default app;
