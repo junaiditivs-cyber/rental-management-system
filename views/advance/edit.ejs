@@ -1,0 +1,87 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Advances Tracker &gt; <span class="text-zinc-200">Edit Advance Deposit specs</span></div>
+        <a href="javascript:history.back()" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Cancel</a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto max-w-2xl space-y-6 font-sans">
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">Modify Security Advance Specs</h1>
+            <p class="text-zinc-500 text-xs mt-1">Update amount, payment channel, dates, or audit notes safely. Updates will not disrupt other ledger items.</p>
+        </div>
+
+        <% if (locals.error_msg) { %>
+            <div class="p-4 bg-red-950/30 border border-red-500/20 text-red-500 text-xs rounded-xl flex items-center justify-between shadow-md">
+                <div class="flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span><%= error_msg %></span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-red-500 font-bold">&times;</button>
+            </div>
+        <% } %>
+
+        <form action="/advance/<%= advance.id %>/edit" method="POST" class="bg-[#111111] border border-[#262626] p-6 rounded-xl space-y-4">
+            
+            <div>
+                <label for="agreement_id" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Connected Lease Agreement</label>
+                <select id="agreement_id" name="agreement_id" required
+                        class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-zinc-400 text-sm focus:outline-none cursor-not-allowed">
+                    <% agreements.forEach(ag => { %>
+                        <option value="<%= ag.id %>" <%= advance.agreement_id === ag.id ? 'selected' : '' %> disabled>
+                            <%= ag.unit_name %> (Tenant: <%= ag.tenant_name %> &bull; Advance security rate: ₨ <%= ag.advance_amount.toLocaleString() %>)
+                        </option>
+                    <% }) %>
+                </select>
+                <span class="text-[10px] text-zinc-500 mt-1 block">To preserve ledger consistency, switching agreement associations is blocked. Please delete and register a fresh transaction if needed.</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="amount" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 font-bold text-emerald-400">Advance Amount (PKR)</label>
+                    <input type="number" id="amount" name="amount" required min="1" value="<%= advance.amount %>"
+                           class="w-full px-3 py-2 bg-[#161616] border border-blue-500/30 rounded-md text-white text-sm focus:outline-none focus:border-blue-500 font-mono">
+                </div>
+
+                <div>
+                    <label for="received_date" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Date Received</label>
+                    <input type="date" id="received_date" name="received_date" required value="<%= advance.received_date %>"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                </div>
+            </div>
+
+            <div>
+                <label for="payment_method" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Payment Channel</label>
+                <select id="payment_method" name="payment_method" required
+                        class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
+                    <option value="Cash" <%= advance.payment_method === 'Cash' ? 'selected' : '' %>>Cash Handover</option>
+                    <option value="Bank" <%= advance.payment_method === 'Bank' ? 'selected' : '' %>>Bank Wire Transfer</option>
+                    <option value="EasyPaisa" <%= advance.payment_method === 'EasyPaisa' ? 'selected' : '' %>>EasyPaisa</option>
+                    <option value="JazzCash" <%= advance.payment_method === 'JazzCash' ? 'selected' : '' %>>JazzCash</option>
+                    <option value="Chq" <%= advance.payment_method === 'Chq' ? 'selected' : '' %>>Cheque Clear</option>
+                    <option value="Other" <%= advance.payment_method === 'Other' ? 'selected' : '' %>>Other Gateway</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="notes" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Remarks / Audit Log Notes</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Change explanations..."
+                          class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all"><%= advance.notes %></textarea>
+            </div>
+
+            <div class="pt-4 border-t border-[#1F1F1F] flex justify-end gap-3">
+                <button type="button" onclick="history.back()" class="px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-zinc-400 hover:text-white border border-[#262626] text-xs font-semibold rounded-md transition-all">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-md transition-all">
+                    Update Deposit
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

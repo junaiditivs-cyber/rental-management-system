@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" class="h-full bg-[#0A0A0A]">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - PK Rental Management</title>
+    <!-- Resource Hints for Faster Resource Loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+
+    <!-- Stable & Optimized Tailwind CSS CDN (Instant Compile, No WASM Lag) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Optional Tailwind CSS Configuration to customize theme styles just in case
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0A0A0A;
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center p-6 text-zinc-300 antialiased">
+    <div class="w-full max-w-sm">
+        <!-- Brand Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 mb-3 font-bold text-lg">
+                PK
+            </div>
+            <h1 class="text-white text-2xl font-bold tracking-tight">PK Rentals</h1>
+            <p class="text-zinc-500 text-xs mt-1">Sophisticated Administrative Portal</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-[#111111] border border-[#262626] p-6 rounded-xl shadow-2xl">
+            <h2 class="text-white font-medium text-base mb-5">Sign In to Dashboard</h2>
+            
+            <!-- iFrame cookie warning fallback -->
+            <div id="iframe-warning" class="hidden mb-4 p-3.5 bg-blue-950/30 border border-blue-500/20 text-sky-400 text-xs rounded-lg space-y-2">
+                <div class="flex items-start gap-2">
+                    <span class="text-base text-sky-400 leading-none">ℹ️</span>
+                    <div>
+                        <p class="font-semibold text-zinc-200">Running inside an iFrame</p>
+                        <p class="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">If login fails or reloads continuously, your browser's security settings may be blocking third-party iframe cookies. Please open the app in a new tab to bypass this limit.</p>
+                    </div>
+                </div>
+                <a href="" id="open-new-tab" target="_blank" class="block w-full text-center py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded text-xs transition-all active:scale-[0.99] shadow-sm">
+                    Open in New Tab ↗
+                </a>
+            </div>
+
+            <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+                <div class="mb-4 p-3 bg-red-950/40 border border-red-500/20 text-red-400 text-xs rounded-md">
+                    <%= error_msg %>
+                </div>
+            <% } %>
+
+            <form action="/login" method="POST" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="admin" value="admin"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/25 transition-all">
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label for="password" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Password</label>
+                    </div>
+                    <input type="password" id="password" name="password" required placeholder="••••••••" value="admin123"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/25 transition-all">
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" 
+                            class="w-full py-2 bg-white text-black hover:bg-zinc-200 text-sm font-semibold rounded-md transition-all active:scale-[0.98]">
+                        Login Account
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Developer Help Node (Can be removed) -->
+        <div class="text-center mt-6 p-3 bg-[#111111]/40 border border-[#1F1F1F] rounded-md text-[11px] text-zinc-500">
+            <p>Demo Credentials: User: <span class="text-zinc-300 font-mono">admin</span> | Pass: <span class="text-zinc-300 font-mono">admin123</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Check if the page is embedded inside an iframe (e.g. Google AI Studio preview)
+        try {
+            if (window.self !== window.top) {
+                const warningDiv = document.getElementById('iframe-warning');
+                const openNewTabLink = document.getElementById('open-new-tab');
+                if (warningDiv && openNewTabLink) {
+                    warningDiv.classList.remove('hidden');
+                    openNewTabLink.href = window.location.href;
+                }
+            }
+        } catch (e) {
+            // If cross-origin error occurs checking top, it's definitely in an iframe
+            const warningDiv = document.getElementById('iframe-warning');
+            const openNewTabLink = document.getElementById('open-new-tab');
+            if (warningDiv && openNewTabLink) {
+                warningDiv.classList.remove('hidden');
+                openNewTabLink.href = window.location.origin + window.location.pathname;
+            }
+        }
+    </script>
+</body>
+</html>

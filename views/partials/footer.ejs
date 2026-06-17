@@ -1,0 +1,147 @@
+    </div><!-- End #app-container -->
+
+    <!-- Custom Premium Deletion Confirmation Modal -->
+    <div id="delete-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 hidden opacity-0 transition-opacity duration-300 backdrop-blur-xs">
+        <div id="delete-confirm-card" class="bg-zinc-950 border border-zinc-900 w-full max-w-md rounded-xl p-6 shadow-2xl transform scale-95 transition-all duration-300">
+            <!-- Icon & Warning Banner -->
+            <div class="flex items-start gap-4 mb-4">
+                <div class="w-10 h-10 rounded-full bg-red-950/40 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-zinc-100 font-bold text-base select-none">Dangerous Action: Confirm Deletion</h3>
+                    <p id="delete-confirm-message" class="text-zinc-400 text-xs mt-1.5 leading-relaxed">
+                        Are you sure you want to permanently delete this record? This action will affect any linked lease agreements and financial history.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Danger Alert details if relevant -->
+            <div class="bg-red-950/20 border border-red-900/40 rounded-lg p-3 text-red-400 text-[11px] mb-5 leading-relaxed font-sans">
+                WARNING: This operation is highly destructive and cannot be undone. Associated ledger parameters and archive traces will be deleted from historical records.
+            </div>
+            
+            <!-- Actions buttons -->
+            <div class="flex justify-end gap-2.5">
+                <button id="delete-confirm-cancel" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-zinc-400 hover:text-white bg-[#1A1A1C] border border-zinc-800 hover:bg-[#252528] transition-colors focus:outline-none" type="button">
+                    Cancel
+                </button>
+                <button id="delete-confirm-submit" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-red-600 hover:bg-red-500 active:bg-red-700 transition-colors focus:outline-none flex items-center gap-1.5" type="button">
+                    Confirm Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Basic notification component auto disappear -->
+    <% if (typeof success_msg !== 'undefined' && success_msg) { %>
+        <div id="toast-success" class="fixed bottom-6 right-6 px-4 py-3 bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 text-xs rounded-lg shadow-xl flex items-center gap-2 max-w-sm transition-all duration-300 z-50">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <%= success_msg %>
+        </div>
+        <script>
+            setTimeout(() => {
+                const toast = document.getElementById('toast-success');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
+        </script>
+    <% } %>
+
+    <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+        <div id="toast-error" class="fixed bottom-6 right-6 px-4 py-3 bg-red-950/80 border border-red-500/30 text-red-400 text-xs rounded-lg shadow-xl flex items-center gap-2 max-w-sm transition-all duration-300 z-50">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+            <%= error_msg %>
+        </div>
+        <script>
+            setTimeout(() => {
+                const toast = document.getElementById('toast-error');
+                if (toast) {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
+        </script>
+    <% } %>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- CUSTOM MODAL DELETION INTERCEPTOR ---
+            const dModal = document.getElementById('delete-confirm-modal');
+            const dCard = document.getElementById('delete-confirm-card');
+            const dCancel = document.getElementById('delete-confirm-cancel');
+            const dSubmit = document.getElementById('delete-confirm-submit');
+            const dMsg = document.getElementById('delete-confirm-message');
+            
+            let activeFormToSubmit = null;
+
+            if (dModal && dCancel && dSubmit) {
+                // Intercept any submit that goes to a '/delete' endpoint
+                document.addEventListener('submit', function(e) {
+                    const formActionVal = e.target.getAttribute('action') || '';
+                    if (formActionVal.includes('/delete')) {
+                        if (e.target.dataset.confirmed === 'true') {
+                            return; // let it pass
+                        }
+
+                        e.preventDefault();
+                        activeFormToSubmit = e.target;
+
+                        // Retrieve custom EJS alert text inside the form or its submit button
+                        const onsubmitValue = e.target.getAttribute('onsubmit') || '';
+                        let textMessage = '';
+
+                        if (onsubmitValue) {
+                            const stringMatch = onsubmitValue.match(/confirm\(['"](.*)['"]\)/);
+                            if (stringMatch && stringMatch[1]) {
+                                textMessage = stringMatch[1];
+                            }
+                        }
+
+                        if (!textMessage) {
+                            textMessage = "Are you sure you want to delete this record from active logs? This action could impact lease histories.";
+                        }
+
+                        // Populate and animate open the modal safely
+                        dMsg.innerText = textMessage;
+                        dModal.classList.remove('hidden');
+                        setTimeout(() => {
+                            dModal.classList.add('opacity-100');
+                            dCard.classList.remove('scale-95');
+                            dCard.classList.add('scale-100');
+                        }, 10);
+                    }
+                });
+
+                function closeInteractiveModal() {
+                    dCard.classList.add('scale-95');
+                    dCard.classList.remove('scale-100');
+                    dModal.classList.remove('opacity-100');
+                    setTimeout(() => {
+                        dModal.classList.add('hidden');
+                        activeFormToSubmit = null;
+                    }, 250);
+                }
+
+                dCancel.addEventListener('click', closeInteractiveModal);
+                
+                dSubmit.addEventListener('click', function() {
+                    if (activeFormToSubmit) {
+                        activeFormToSubmit.dataset.confirmed = 'true';
+                        
+                        // Set deletion loading styling for maximum responsive feedback
+                        dSubmit.disabled = true;
+                        dSubmit.innerHTML = `<span class="inline-flex items-center gap-1.5"><svg class="animate-spin h-3 w-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle><path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Confirming Deletion...</span>`;
+                        
+                        activeFormToSubmit.submit();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

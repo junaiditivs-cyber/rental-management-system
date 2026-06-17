@@ -1,0 +1,6 @@
+{
+  "name": "Rental Management System",
+  "description": "A comprehensive web-based Rental Management System with EJS templates and Supabase database integration for managing rental properties in Pakistan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

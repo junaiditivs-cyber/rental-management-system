@@ -1,0 +1,170 @@
+<%- include('partials/header') %>
+<%- include('partials/sidebar') %>
+
+<!-- Main Panel Content -->
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header bar -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Overview &gt; <span class="text-zinc-200">Main Administrative Dashboard</span></div>
+        <div class="flex items-center gap-4">
+            <a href="/smart-entry" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md shadow-lg transition-all active:scale-[0.98] flex items-center gap-1">
+                <span>⚡ + Smart Entry</span>
+            </a>
+            <a href="/properties/add" class="px-4 py-1.5 bg-[#1C1C1C] border border-[#2E2E2E] text-zinc-300 text-xs font-semibold rounded-md hover:bg-zinc-800 hover:text-white shadow-md transition-all active:scale-[0.98]">
+                + Add Property
+            </a>
+            <div class="w-px h-4 bg-zinc-800"></div>
+            <span class="text-[11px] text-zinc-400 font-mono italic">Time: <%= new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %> PKT</span>
+        </div>
+    </header>
+
+    <!-- Scrollable main panel container -->
+    <div class="p-8 flex-1 overflow-y-auto space-y-8">
+
+        <% if (locals.success_msg) { %>
+            <div class="p-4 bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl flex items-center justify-between shadow-md">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm">✅</span>
+                    <span><%= success_msg %></span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-300 font-bold text-sm">&times;</button>
+            </div>
+        <% } %>
+        
+        <!-- Welcome Message -->
+        <div class="flex justify-between items-center bg-gradient-to-r from-blue-950/20 to-zinc-950 p-6 rounded-xl border border-blue-900/10">
+            <div>
+                <h1 class="text-white font-bold tracking-tight text-xl">Assalam-o-Alaikum, from JUNAID </h1>
+                <p class="text-zinc-400 text-xs mt-1">Here is the real-time summary of your rental operations across cities of Pakistan.</p>
+            </div>
+            
+        </div>
+
+        <!-- Top Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
+                <div class="text-[10px] font-bold text-zinc-500 tracking-wider uppercase mb-1">Total Expected Monthly Rent</div>
+                <div class="text-2xl font-bold text-white tracking-tight">₨ <%= overallStats.expected.toLocaleString() %></div>
+                <div class="text-[10px] text-zinc-500 mt-2 font-mono">Estimated total list rent</div>
+            </div>
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
+                <div class="text-[10px] font-bold text-emerald-500/80 tracking-wider uppercase mb-1">Monthly Received Rent</div>
+                <div class="text-2xl font-bold text-emerald-400 tracking-tight">₨ <%= overallStats.received.toLocaleString() %></div>
+                <div class="text-[10px] text-emerald-600 font-mono mt-2 flex items-center gap-1">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Verified payments received
+                </div>
+            </div>
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
+                <div class="text-[10px] font-bold text-amber-500/80 tracking-wider uppercase mb-1">Monthly Outstanding Rent</div>
+                <div class="text-2xl font-bold text-amber-400 tracking-tight">₨ <%= overallStats.pending.toLocaleString() %></div>
+                <div class="text-[10px] text-amber-600 font-mono mt-2 flex items-center gap-1">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Arrears and partial residuals
+                </div>
+            </div>
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
+                <div class="text-[10px] font-bold text-zinc-500 tracking-wider uppercase mb-1">Vacancy Ratio</div>
+                <div class="text-2xl font-bold text-white tracking-tight"><%= overallStats.vacancyRate.toFixed(1) %>%</div>
+                <div class="text-[10px] text-zinc-500 mt-2 font-mono">
+                    <%= overallStats.vacantUnits %> / <%= overallStats.totalUnits %> Units Vacant
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: City Cards Grid -->
+        <div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">Portfolio Cities Summary</h2>
+                <a href="/cities/add" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium">
+                    + Add New City
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <% if (citiesData && citiesData.length > 0) { %>
+                    <% citiesData.forEach(city => { %>
+                        <!-- Clickable City Card -->
+                        <div class="bg-[#161616] border border-[#262626] rounded-xl overflow-hidden hover:border-blue-500/50 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
+                             onclick="window.location.href='/cities/<%= city.id %>'">
+                            <div class="p-5">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3 class="text-white font-semibold text-lg group-hover:text-blue-400 transition-colors"><%= city.name %></h3>
+                                        <p class="text-xs text-zinc-500"><%= city.province %></p>
+                                    </div>
+                                    <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider border border-blue-500/10">
+                                        <%= city.propertyCount %> Properties
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-y-4 gap-x-2 border-t border-[#1F1F1F] pt-4">
+                                    <div>
+                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Total Units</div>
+                                        <div class="text-sm font-semibold text-zinc-200"><%= city.unitCount %> Total</div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Rented</div>
+                                        <div class="flex gap-1 items-center">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                            <span class="text-xs text-zinc-300 font-medium"><%= city.rentedCount %></span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Vacant</div>
+                                        <div class="flex gap-1 items-center">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                                            <span class="text-xs text-red-400 font-medium"><%= city.vacantCount %> Units</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Monthly Rent</div>
+                                        <div class="flex gap-1 items-center">
+                                            <span class="text-xs text-zinc-300 font-mono font-medium">₨ <%= (city.expectedRent / 1000).toFixed(0) %>k</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-[#1F1F1F] px-5 py-3 border-t border-[#262626] flex justify-between items-center text-xs group-hover:bg-[#252528] transition-colors">
+                                <span class="text-zinc-400">Rent Cash Collection</span>
+                                <span class="text-white font-bold font-mono">₨ <%= city.receivedRent.toLocaleString() %></span>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="col-span-3 bg-[#111111] p-8 rounded-xl border border-[#262626] text-center text-zinc-500">
+                        <p>No cities available. Add your first city to begin portfolio operations.</p>
+                        <a href="/cities/add" class="inline-block mt-3 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md text-xs font-semibold">
+                            Add City
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Recent Activity Logs section -->
+        <div class="pt-2">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">System Live Logs</h3>
+                <a href="/logs" class="text-xs text-zinc-500 hover:text-zinc-400 font-medium">View All Logs</a>
+            </div>
+            <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg divide-y divide-[#1F1F1F]">
+                <% if (activityLogs && activityLogs.length > 0) { %>
+                    <% activityLogs.slice(0, 5).forEach(log => { %>
+                        <div class="p-4 flex justify-between items-center text-xs hover:bg-[#161616]/50 transition-colors">
+                            <div class="flex items-center gap-3">
+                                <span class="px-2 py-0.5 bg-[#262626] border border-[#3F3F46]/20 rounded text-[10px] text-zinc-400 font-mono uppercase font-semibold"><%= log.action %></span>
+                                <span class="text-zinc-200"><%= log.details %></span>
+                            </div>
+                            <span class="text-zinc-500 font-mono"><%= new Date(log.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %></span>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <div class="p-4 text-center text-zinc-500 text-xs">No active logs saved.</div>
+                <% } %>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<%- include('partials/footer') %>

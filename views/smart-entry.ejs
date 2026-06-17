@@ -1,0 +1,901 @@
+<%- include('partials/header') %>
+<%- include('partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header bar -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Dashboard &gt; <span class="text-zinc-200">Unified Smart Entry Wizard</span></div>
+        <a href="/" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Back to Dashboard</a>
+    </header>
+
+    <!-- Scrollable content area -->
+    <div class="p-8 flex-1 overflow-y-auto max-w-4xl mx-auto w-full space-y-6">
+        <div>
+            <h1 class="text-white text-xl font-bold tracking-tight flex items-center gap-2">
+                <span class="p-1 px-2.5 bg-blue-500/10 text-blue-400 rounded-md text-sm">⚡</span>
+                Unified Smart Entry Wizard
+            </h1>
+            <p class="text-zinc-400 text-xs mt-1">Beginner-friendly step-by-step setup. Feed city, area, property, unit, tenant, lease agreement and payments simultaneously.</p>
+        </div>
+
+        <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+            <div id="error-banner" class="p-4 bg-red-950/45 border border-red-500/20 text-red-400 text-xs rounded-xl flex items-center justify-between">
+                <span><%= error_msg %></span>
+                <button onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-300 font-bold">&times;</button>
+            </div>
+        <% } %>
+
+        <!-- Wizard Progress Bar -->
+        <div class="bg-[#111111] border border-[#262626] p-4 rounded-xl flex items-center justify-between shadow-md select-none">
+            <div class="flex items-center gap-2 text-xs">
+                <span id="step-indicator-1" class="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-blue-600 text-white transition-colors">1</span>
+                <span class="text-zinc-200 font-medium">Property Node</span>
+            </div>
+            <div class="flex-1 h-px bg-zinc-800 mx-4"></div>
+            <div class="flex items-center gap-2 text-xs">
+                <span id="step-indicator-2" class="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-[#1F1F1F] text-zinc-500 transition-colors">2</span>
+                <span class="text-zinc-500 font-medium">Rental Unit</span>
+            </div>
+            <div class="flex-1 h-px bg-zinc-800 mx-4"></div>
+            <div class="flex items-center gap-2 text-xs">
+                <span id="step-indicator-3" class="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-[#1F1F1F] text-zinc-500 transition-colors">3</span>
+                <span class="text-zinc-500 font-medium">Tenant Profile</span>
+            </div>
+            <div class="flex-1 h-px bg-zinc-800 mx-4"></div>
+            <div class="flex items-center gap-2 text-xs">
+                <span id="step-indicator-4" class="w-6 h-6 rounded-full flex items-center justify-center font-bold bg-[#1F1F1F] text-zinc-500 transition-colors">4</span>
+                <span class="text-zinc-500 font-medium">Lease &amp; Payment</span>
+            </div>
+        </div>
+
+        <!-- Master Form -->
+        <form action="/smart-entry" method="POST" id="smart-entry-form" class="space-y-6">
+            
+            <!-- STEP 1: City, Area, Property -->
+            <div id="step-section-1" class="bg-[#111111] border border-[#262626] rounded-xl p-6 space-y-6">
+                <div>
+                    <h2 class="text-white font-semibold text-base">Step 1: Location &amp; Property Details</h2>
+                    <p class="text-zinc-500 text-xs mt-0.5">Select a pre-existing municipal sector &amp; estate or click corresponding options to register them instantly.</p>
+                </div>
+
+                <!-- City Subsegment -->
+                <div class="border-t border-[#1F1F1F] pt-4 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                            <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span> City Information
+                        </h3>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">City Setup Mode</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                    <input type="radio" name="city_mode" value="select" checked onchange="toggleCityMode('select')" class="accent-blue-500">
+                                    <span>Select Existing</span>
+                                </label>
+                                <label class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                    <input type="radio" name="city_mode" value="new" onchange="toggleCityMode('new')" class="accent-blue-500">
+                                    <span>+ Add New City</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Select City Dropdown -->
+                        <div id="city-select-wrapper">
+                            <label for="city_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Choose City</label>
+                            <select id="city_id" name="city_id" onchange="onCityChanged(this.value)"
+                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                <option value="">-- Choose City --</option>
+                                <% cities.forEach(c => { %>
+                                    <option value="<%= c.id %>"><%= c.name %> (<%= c.province %>)</option>
+                                <% }) %>
+                            </select>
+                        </div>
+
+                        <!-- New City Creation Inputs -->
+                        <div id="city-new-wrapper" class="hidden grid grid-cols-2 gap-2">
+                            <div>
+                                <label for="new_city_name" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">City Name</label>
+                                <input type="text" id="new_city_name" name="new_city_name" placeholder="e.g. Islamabad"
+                                       class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
+                            </div>
+                            <div>
+                                <label for="new_city_province" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Province</label>
+                                <select id="new_city_province" name="new_city_province"
+                                        class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                    <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa (KPK)</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Federal Capital">Federal Capital</option>
+                                    <option value="Sindh">Sindh</option>
+                                    <option value="Balochistan">Balochistan</option>
+                                    <option value="Gilgit Baltistan">Gilgit Baltistan</option>
+                                    <option value="Azad Kashmir">Azad Kashmir</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Area Subsegment -->
+                <div class="border-t border-[#1F1F1F] pt-4 space-y-4">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span> Area Information
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Area Setup Mode</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label id="area-select-label" class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2 pointer-events-none opacity-50">
+                                    <input type="radio" id="area_mode_select" name="area_mode" value="select" checked onchange="toggleAreaMode('select')" class="accent-blue-500">
+                                    <span>Select Existing</span>
+                                </label>
+                                <label id="area-new-label" class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                    <input type="radio" id="area_mode_new" name="area_mode" value="new" onchange="toggleAreaMode('new')" class="accent-blue-500">
+                                    <span>+ Add New Area</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Select Area Dropdown -->
+                        <div id="area-select-wrapper">
+                            <label for="area_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Choose Area</label>
+                            <select id="area_id" name="area_id" onchange="onAreaChanged(this.value)" disabled
+                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all opacity-60">
+                                <option value="">-- Choose Area --</option>
+                            </select>
+                        </div>
+
+                        <!-- New Area Input -->
+                        <div id="area-new-wrapper" class="hidden">
+                            <label for="new_area_name" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">New Area Name</label>
+                            <input type="text" id="new_area_name" name="new_area_name" placeholder="e.g. Sector G-11 or Saddar Bazaar"
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-750 focus:outline-none focus:border-blue-500/80 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Subsegment -->
+                <div class="border-t border-[#1F1F1F] pt-4 space-y-4">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span class="inline-block w-1 h-3 bg-blue-500 rounded"></span> Property Node
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Property Setup Mode</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <label id="prop-select-label" class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2 pointer-events-none opacity-50">
+                                    <input type="radio" id="property_mode_select" name="property_mode" value="select" checked onchange="togglePropMode('select')" class="accent-blue-500">
+                                    <span>Select Existing</span>
+                                </label>
+                                <label id="prop-new-label" class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                    <input type="radio" id="property_mode_new" name="property_mode" value="new" onchange="togglePropMode('new')" class="accent-blue-500">
+                                    <span>+ Add New Property</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Select Property Dropdown -->
+                        <div id="property-select-wrapper">
+                            <label for="property_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Choose Property</label>
+                            <select id="property_id" name="property_id" onchange="onPropertyChanged(this.value)" disabled
+                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all opacity-60">
+                                <option value="">-- Choose Property --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- New Property Details Forms -->
+                    <div id="property-new-wrapper" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl border border-dashed border-zinc-800 bg-[#141414]">
+                        <div class="col-span-1 md:col-span-2">
+                            <h4 class="text-zinc-200 text-xs font-semibold">New Property Node Parameters</h4>
+                        </div>
+                        <div>
+                            <label for="new_property_name" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Property Name</label>
+                            <input type="text" id="new_property_name" name="new_property_name" placeholder="e.g. Centaurus Executive Plaza"
+                                   class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        </div>
+                        <div>
+                            <label for="new_property_type" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Property Type</label>
+                            <select id="new_property_type" name="new_property_type"
+                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                <option value="Plaza">Plaza</option>
+                                <option value="House">House</option>
+                                <option value="Shop">Shop Line / Mall</option>
+                                <option value="Office">Office Plaza</option>
+                                <option value="Flat">Apartment Flat Block</option>
+                                <option value="Other">Other Category</option>
+                            </select>
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            <label for="new_property_address" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Full Physical Location / Address</label>
+                            <input type="text" id="new_property_address" name="new_property_address" placeholder="e.g. Plot 3-B, Main Jinnah Avenue Road..."
+                                   class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Navigation Buttons for Step 1 -->
+                <div class="flex justify-end pt-4 border-t border-[#1F1F1F]">
+                    <button type="button" onclick="goToStep(2)" id="step-1-next" disabled class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-[#1A1A1A] disabled:text-zinc-600 disabled:border-zinc-800 text-white font-semibold text-xs rounded-md shadow-lg transition-all active:scale-[0.98]">
+                        Next: Configure Unit &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Floors & Units -->
+            <div id="step-section-2" class="bg-[#111111] border border-[#262626] rounded-xl p-6 space-y-6 hidden">
+                <div>
+                    <h2 class="text-white font-semibold text-base">Step 2: Setup Unit details</h2>
+                    <p class="text-zinc-500 text-xs mt-0.5">Define which apartment, shop, desk location, or office suite is being leased.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Unit Selection Mode</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label id="unit-select-label" class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                <input type="radio" id="unit_mode_select" name="unit_mode" value="select" checked onchange="toggleUnitMode('select')" class="accent-blue-500">
+                                <span>Select Existing Unit</span>
+                            </label>
+                            <label id="unit-new-label" class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                <input type="radio" id="unit_mode_new" name="unit_mode" value="new" onchange="toggleUnitMode('new')" class="accent-blue-500">
+                                <span>+ Create New Unit</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Select Unit Dropdown -->
+                    <div id="unit-select-wrapper">
+                        <label for="unit_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2 font-mono">Select Unit Code</label>
+                        <select id="unit_id" name="unit_id" onchange="onUnitChanged(this.value)"
+                                class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                            <option value="">-- Choose Unit --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- New Unit Configuration Dashboard -->
+                <div id="unit-new-wrapper" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 p-5 rounded-xl border border-dashed border-zinc-800 bg-[#141414]">
+                    <div class="col-span-1 md:col-span-2">
+                        <h4 class="text-zinc-200 text-xs font-semibold">New Unit Specifications</h4>
+                    </div>
+                    <div>
+                        <label for="new_unit_name" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Unit Name / Number</label>
+                        <input type="text" id="new_unit_name" name="new_unit_name" placeholder="e.g. Shop G-05 or Flat 102"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_unit_floor_name" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Floor Level</label>
+                        <select id="new_unit_floor_name" name="new_unit_floor_name"
+                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                            <option value="Ground Floor">Ground Floor</option>
+                            <option value="First Floor">First Floor</option>
+                            <option value="Second Floor">Second Floor</option>
+                            <option value="Third Floor">Third Floor</option>
+                            <option value="Basement">Basement Level</option>
+                            <option value="Roof Top">Roof Top</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="new_unit_type" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Unit Category Type</label>
+                        <select id="new_unit_type" name="new_unit_type"
+                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                            <option value="Shop">Shop</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="Office">Office Suite</option>
+                            <option value="Room">Standard Room</option>
+                            <option value="Flat">Standard Flat</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="new_unit_rent_amount" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Base Expected Monthly Rent (₨)</label>
+                        <input type="number" id="new_unit_rent_amount" name="new_unit_rent_amount" placeholder="e.g. 35000" oninput="syncRentInput(this.value)"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_unit_status" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Initial Unit Status</label>
+                        <select id="new_unit_status" name="new_unit_status"
+                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                            <option value="Available">Available</option>
+                            <option value="Rented" selected>Rented (Auto Assign)</option>
+                            <option value="Vacant">Vacant</option>
+                            <option value="Maintenance">Maintenance Break</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Footer Navigation Buttons for Step 2 -->
+                <div class="flex justify-between pt-4 border-t border-[#1F1F1F]">
+                    <button type="button" onclick="goToStep(1)" class="px-4 py-2 bg-[#1A1A1A] border border-[#262626] text-zinc-400 hover:text-white hover:bg-[#222222] text-xs font-semibold rounded-md transition-all">
+                        &larr; Back
+                    </button>
+                    <button type="button" onclick="goToStep(3)" id="step-2-next" disabled class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-[#1A1A1A] disabled:text-zinc-600 disabled:border-zinc-800 text-white font-semibold text-xs rounded-md transition-all active:scale-[0.98]">
+                        Next: Client Information &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Tenant Information -->
+            <div id="step-section-3" class="bg-[#111111] border border-[#262626] rounded-xl p-6 space-y-6 hidden">
+                <div>
+                    <h2 class="text-white font-semibold text-base">Step 3: Tenant / Client Information</h2>
+                    <p class="text-zinc-500 text-xs mt-0.5">Connect an existing tenant profile from the ledger or input personal credentials for a new client.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Tenant Profile Type</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                <input type="radio" name="tenant_mode" value="select" checked onchange="toggleTenantMode('select')" class="accent-blue-500">
+                                <span>Select Registered</span>
+                            </label>
+                            <label class="border border-[#262626] bg-[#161616] px-4 py-2 rounded-lg cursor-pointer text-xs text-zinc-300 hover:border-zinc-700 flex items-center gap-2">
+                                <input type="radio" name="tenant_mode" value="new" onchange="toggleTenantMode('new')" class="accent-blue-500">
+                                <span>+ New Registration</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Select Tenant Dropdown -->
+                    <div id="tenant-select-wrapper">
+                        <label for="tenant_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Choose Tenant Profile</label>
+                        <select id="tenant_id" name="tenant_id" onchange="onTenantChanged(this.value)"
+                                class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                            <option value="">-- Choose Tenant --</option>
+                            <% tenants.forEach(t => { %>
+                                <option value="<%= t.id %>"><%= t.name %> (<%= t.phone %> - CNIC: <%= t.cnic %>)</option>
+                            <% }) %>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Register New Tenant Profile Segment -->
+                <div id="tenant-new-wrapper" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 p-5 rounded-xl border border-dashed border-zinc-800 bg-[#141414]">
+                    <div class="col-span-1 md:col-span-2">
+                        <h4 class="text-zinc-200 text-xs font-semibold">New Profile Personal Information</h4>
+                    </div>
+                    <div>
+                        <label for="new_tenant_name" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Tenant Name *</label>
+                        <input type="text" id="new_tenant_name" name="new_tenant_name" placeholder="e.g. junaid ali" oninput="onTenantNewFieldsChanged()"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_tenant_father_name" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Father's Name</label>
+                        <input type="text" id="new_tenant_father_name" name="new_tenant_father_name" placeholder="e.g. Zaman Ali"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_tenant_cnic" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">CNIC Card Number</label>
+                        <input type="text" id="new_tenant_cnic" name="new_tenant_cnic" placeholder="e.g. 17301-1234567-9"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_tenant_phone" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Phone Number *</label>
+                        <input type="text" id="new_tenant_phone" name="new_tenant_phone" placeholder="e.g. 0333-1234567" oninput="onTenantNewFieldsChanged()"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div class="col-span-1 md:col-span-2">
+                        <label for="new_tenant_address" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Permanent Residential Address</label>
+                        <input type="text" id="new_tenant_address" name="new_tenant_address" placeholder="e.g. Sector H, Phase 4, Hayatabad, Peshawar"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_tenant_emergency_contact" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Emergency Contact Details</label>
+                        <input type="text" id="new_tenant_emergency_contact" name="new_tenant_emergency_contact" placeholder="e.g. Brother: 0300-1122334"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="new_tenant_notes" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Brief Notes / Business Category</label>
+                        <input type="text" id="new_tenant_notes" name="new_tenant_notes" placeholder="e.g. Cloth merchant or software developer"
+                               class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                </div>
+
+                <!-- Footer Navigation Buttons for Step 3 -->
+                <div class="flex justify-between pt-4 border-t border-[#1F1F1F]">
+                    <button type="button" onclick="goToStep(2)" class="px-4 py-2 bg-[#1A1A1A] border border-[#262626] text-zinc-400 hover:text-white hover:bg-[#222222] text-xs font-semibold rounded-md transition-all">
+                        &larr; Back
+                    </button>
+                    <button type="button" onclick="goToStep(4)" id="step-3-next" disabled class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-[#1A1A1A] disabled:text-zinc-600 disabled:border-zinc-800 text-white font-semibold text-xs rounded-md transition-all active:scale-[0.98]">
+                        Next: Lease Agreements &amp; Payments &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 4: Lease & Financial Information -->
+            <div id="step-section-4" class="bg-[#111111] border border-[#262626] rounded-xl p-6 space-y-6 hidden">
+                <div>
+                    <h2 class="text-white font-semibold text-base">Step 4: Rent Agreement &amp; Payments Setup</h2>
+                    <p class="text-zinc-500 text-xs mt-0.5">Determine the lease contracts constraints and finalize outstanding payments collections parameters.</p>
+                </div>
+
+                <!-- Section: Agreement -->
+                <div class="border-t border-[#1F1F1F] pt-4 space-y-4">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span class="inline-block w-1 h-3 bg-blue-500 rounded font-bold"></span> Rent Agreement Variables
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="agreement_start_date" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Agreement Start Date</label>
+                            <input type="date" id="agreement_start_date" name="agreement_start_date" required value="2026-06-16"
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                        </div>
+                        <div>
+                            <label for="agreement_end_date" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Agreement End Date</label>
+                            <input type="date" id="agreement_end_date" name="agreement_end_date" required value="2027-06-15"
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                        </div>
+                        <div>
+                            <label for="agreement_monthly_rent" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Finalized Monthly Rent (₨)</label>
+                            <input type="number" id="agreement_monthly_rent" name="agreement_monthly_rent" required placeholder="e.g. 35000"
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                        </div>
+                        <div>
+                            <label for="agreement_advance_amount" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Advance Security Amount (₨)</label>
+                            <input type="number" id="agreement_advance_amount" name="agreement_advance_amount" required value="100000" placeholder="e.g. 100000"
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                        </div>
+                        <div class="col-span-1 md:col-span-2">
+                            <label for="agreement_notes" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Agreement Terms / Remarks (Optional)</label>
+                            <input type="text" id="agreement_notes" name="agreement_notes" placeholder="e.g. standard residential terms with 10% annual increase limits."
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Payments and Receipts setup -->
+                <div class="border-t border-[#1F1F1F] pt-4 space-y-4">
+                    <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span class="inline-block w-1 h-3 bg-emerald-500 rounded font-bold"></span> Ledger Payment Generation
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#141414] p-4 rounded-xl border border-dashed border-[#262626]">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Record Advance Security Payment?</label>
+                            <select name="record_advance_payment" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                <option value="yes" selected>Yes, Paid Automatically</option>
+                                <option value="no">No (Will show as unpaid/pending)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Record First Month Rent Payment?</label>
+                            <select name="record_first_rent" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
+                                <option value="yes" selected>Yes, Paid Fully (₨ <%= new Date().toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) %>)</option>
+                                <option value="no">No, Pending Arrears</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="payment_date" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Collection/Payment Date</label>
+                            <input type="date" id="payment_date" name="payment_date" value="2026-06-16"
+                                   class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                        </div>
+
+                        <div>
+                            <label for="payment_method" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Payment Method Category</label>
+                            <select id="payment_method" name="payment_method"
+                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-355 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
+                                <option value="Cash" selected>Cash Handover</option>
+                                <option value="Bank Transfer">Bank Transfer (HBL/Allied)</option>
+                                <option value="EasyPaisa">EasyPaisa e-wallet</option>
+                                <option value="JazzCash">JazzCash e-wallet</option>
+                                <option value="Cheque">Standard Bank Cheque</option>
+                                <option value="Other">Other Method</option>
+                            </select>
+                        </div>
+
+                        <div class="col-span-1 md:col-span-2">
+                            <label for="payment_remarks" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Payment Remarks / Reference (Optional)</label>
+                            <input type="text" id="payment_remarks" name="payment_remarks" placeholder="e.g. Collected via cash. Receipt voucher no #23"
+                                   class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Navigation Buttons for Step 4 -->
+                <div class="flex justify-between pt-4 border-t border-[#1F1F1F]">
+                    <button type="button" onclick="goToStep(3)" class="px-4 py-2 bg-[#1A1A1A] border border-[#262626] text-zinc-400 hover:text-white hover:bg-[#222222] text-xs font-semibold rounded-md transition-all">
+                        &larr; Back
+                    </button>
+                    <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-md shadow-lg shadow-emerald-950/20 transition-all active:scale-[0.98]">
+                        ⚡ Finish &amp; Submit Smart Record
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</main>
+
+<script>
+    // Client-side raw datastore arrays injected safely from EJS backend
+    const rawAreas = <%- JSON.stringify(areas) %>;
+    const rawProperties = <%- JSON.stringify(properties) %>;
+    const rawUnits = <%- JSON.stringify(units) %>;
+
+    // Active screen navigation logic
+    let currentStep = 1;
+
+    function goToStep(stepNum) {
+        // Simple step transitions
+        document.getElementById(`step-section-${currentStep}`).classList.add('hidden');
+        document.getElementById(`step-section-${stepNum}`).classList.remove('hidden');
+
+        // Update progress indicators style
+        for (let idx = 1; idx <= 4; idx++) {
+            const indicator = document.getElementById(`step-indicator-${idx}`);
+            if (idx === stepNum) {
+                indicator.className = "w-6 h-6 rounded-full flex items-center justify-center font-bold bg-blue-600 text-white transition-colors duration-200";
+                indicator.nextElementSibling.className = "text-zinc-200 font-medium transition-colors duration-200";
+            } else if (idx < stepNum) {
+                indicator.className = "w-6 h-6 rounded-full flex items-center justify-center font-bold bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 transition-colors duration-200";
+                indicator.nextElementSibling.className = "text-zinc-400 font-medium transition-colors duration-200";
+            } else {
+                indicator.className = "w-6 h-6 rounded-full flex items-center justify-center font-bold bg-[#1F1F1F] text-zinc-500 transition-colors duration-200";
+                indicator.nextElementSibling.className = "text-zinc-500 font-medium transition-colors duration-200";
+            }
+        }
+        currentStep = stepNum;
+        
+        // Auto scroll to top of progress bar
+        document.querySelector('main').scrollTop = 0;
+    }
+
+    // Toggle subsegments depending on selection card states
+    function toggleCityMode(mode) {
+        const selectWrapper = document.getElementById('city-select-wrapper');
+        const newWrapper = document.getElementById('city-new-wrapper');
+        const nextButton = document.getElementById('step-1-next');
+        
+        if (mode === 'new') {
+            selectWrapper.classList.add('hidden');
+            newWrapper.classList.remove('hidden');
+            
+            // Force Area/Property setup modes to be "new" automatically because you cannot link a new city to old area/property
+            setRadioValue('area_mode', 'new');
+            toggleAreaMode('new');
+            setLabelDisabled('area-select-label', true);
+            
+            checkStep1Validation();
+        } else {
+            selectWrapper.classList.remove('hidden');
+            newWrapper.classList.add('hidden');
+            
+            setLabelDisabled('area-select-label', false);
+            checkStep1Validation();
+        }
+    }
+
+    function toggleAreaMode(mode) {
+        const selectWrapper = document.getElementById('area-select-wrapper');
+        const newWrapper = document.getElementById('area-new-wrapper');
+        
+        if (mode === 'new') {
+            selectWrapper.classList.add('hidden');
+            newWrapper.classList.remove('hidden');
+            
+            // Force Property to new also because new area means property inside it must be new
+            setRadioValue('property_mode', 'new');
+            togglePropMode('new');
+            setLabelDisabled('prop-select-label', true);
+            
+            checkStep1Validation();
+        } else {
+            selectWrapper.classList.remove('hidden');
+            newWrapper.classList.add('hidden');
+            
+            setLabelDisabled('prop-select-label', false);
+            checkStep1Validation();
+        }
+    }
+
+    function togglePropMode(mode) {
+        const selectWrapper = document.getElementById('property-select-wrapper');
+        const newWrapper = document.getElementById('property-new-wrapper');
+        
+        if (mode === 'new') {
+            selectWrapper.classList.add('hidden');
+            newWrapper.classList.remove('hidden');
+            
+            // If property is new, force Unit mode to be New!
+            setRadioValue('unit_mode', 'new');
+            toggleUnitMode('new');
+            setLabelDisabled('unit-select-label', true);
+            
+            checkStep1Validation();
+        } else {
+            selectWrapper.classList.remove('hidden');
+            newWrapper.classList.add('hidden');
+            
+            setLabelDisabled('unit-select-label', false);
+            checkStep1Validation();
+        }
+    }
+
+    function toggleUnitMode(mode) {
+        const selectWrapper = document.getElementById('unit-select-wrapper');
+        const newWrapper = document.getElementById('unit-new-wrapper');
+        
+        if (mode === 'new') {
+            selectWrapper.classList.add('hidden');
+            newWrapper.classList.remove('hidden');
+            
+            checkStep2Validation();
+        } else {
+            selectWrapper.classList.remove('hidden');
+            newWrapper.classList.add('hidden');
+            
+            checkStep2Validation();
+        }
+    }
+
+    function toggleTenantMode(mode) {
+        const selectWrapper = document.getElementById('tenant-select-wrapper');
+        const newWrapper = document.getElementById('tenant-new-wrapper');
+        
+        if (mode === 'new') {
+            selectWrapper.classList.add('hidden');
+            newWrapper.classList.remove('hidden');
+            checkStep3Validation();
+        } else {
+            selectWrapper.classList.remove('hidden');
+            newWrapper.classList.add('hidden');
+            checkStep3Validation();
+        }
+    }
+
+    // Dynamic filtering cascades
+    function onCityChanged(cityId) {
+        const areaSelect = document.getElementById('area_id');
+        const areaModeSelect = document.getElementById('area_mode_select');
+        
+        // Reset Area and Property selectors
+        areaSelect.innerHTML = '<option value="">-- Choose Area --</option>';
+        areaSelect.disabled = true;
+        areaSelect.classList.add('opacity-60');
+        
+        resetPropertySelector();
+        resetUnitSelector();
+        
+        if (!cityId) {
+            setLabelDisabled('area-select-label', true);
+            setRadioValue('area_mode', 'new');
+            toggleAreaMode('new');
+            return;
+        }
+
+        // Enable Area Select Mode Option
+        setLabelDisabled('area-select-label', false);
+        setRadioValue('area_mode', 'select');
+        toggleAreaMode('select');
+
+        // Filter and compile areas matching city ID
+        const matchedAreas = rawAreas.filter(a => a.city_id === cityId);
+        if (matchedAreas.length > 0) {
+            matchedAreas.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id;
+                opt.textContent = a.name;
+                areaSelect.appendChild(opt);
+            });
+            areaSelect.disabled = false;
+            areaSelect.classList.remove('opacity-60');
+        } else {
+            // Force new area mode if none found
+            setRadioValue('area_mode', 'new');
+            toggleAreaMode('new');
+        }
+        checkStep1Validation();
+    }
+
+    function onAreaChanged(areaId) {
+        const propSelect = document.getElementById('property_id');
+        resetPropertySelector();
+        resetUnitSelector();
+
+        if (!areaId) {
+            setLabelDisabled('prop-select-label', true);
+            setRadioValue('property_mode', 'new');
+            togglePropMode('new');
+            return;
+        }
+
+        setLabelDisabled('prop-select-label', false);
+        setRadioValue('property_mode', 'select');
+        togglePropMode('select');
+
+        // Filter properties matching City and Area
+        const cityId = document.getElementById('city_id').value;
+        const matchedProps = rawProperties.filter(p => p.city_id === cityId && p.area_id === areaId);
+        
+        if (matchedProps.length > 0) {
+            matchedProps.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name + ` (${p.property_type})`;
+                propSelect.appendChild(opt);
+            });
+            propSelect.disabled = false;
+            propSelect.classList.remove('opacity-60');
+        } else {
+            setRadioValue('property_mode', 'new');
+            togglePropMode('new');
+        }
+        checkStep1Validation();
+    }
+
+    function onPropertyChanged(propertyId) {
+        resetUnitSelector();
+        checkStep1Validation();
+
+        if (!propertyId) {
+            setLabelDisabled('unit-select-label', true);
+            setRadioValue('unit_mode', 'new');
+            toggleUnitMode('new');
+            return;
+        }
+
+        setLabelDisabled('unit-select-label', false);
+        setRadioValue('unit_mode', 'select');
+        toggleUnitMode('select');
+
+        // Render matching unit selectors
+        const unitSelect = document.getElementById('unit_id');
+        const matchedUnits = rawUnits.filter(u => u.property_id === propertyId);
+        
+        if (matchedUnits.length > 0) {
+            matchedUnits.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.name} [Type: ${u.unit_type}] - Status: ${u.status} - (₨ ${u.rent_amount.toLocaleString()}/mo)`;
+                unitSelect.appendChild(opt);
+            });
+        } else {
+            setRadioValue('unit_mode', 'new');
+            toggleUnitMode('new');
+        }
+    }
+
+    function onUnitChanged(unitId) {
+        checkStep2Validation();
+        if (!unitId) return;
+
+        // Auto-extract monthly rent from unit record to agreement rent inputs
+        const unit = rawUnits.find(u => u.id === unitId);
+        if (unit) {
+            document.getElementById('agreement_monthly_rent').value = unit.rent_amount;
+        }
+    }
+
+    function syncRentInput(val) {
+        document.getElementById('agreement_monthly_rent').value = val;
+    }
+
+    // Tenant check triggers
+    function onTenantChanged(tenantId) {
+        checkStep3Validation();
+    }
+
+    function onTenantNewFieldsChanged() {
+        checkStep3Validation();
+    }
+
+    // Step-by-Step interactive validations and visual triggers
+    function checkStep1Validation() {
+        const nextBtn = document.getElementById('step-1-next');
+        const cityMode = getRadioValue('city_mode');
+        const areaMode = getRadioValue('area_mode');
+        const propMode = getRadioValue('property_mode');
+        
+        let isValid = true;
+
+        if (cityMode === 'select' && !document.getElementById('city_id').value) isValid = false;
+        if (cityMode === 'new' && !document.getElementById('new_city_name').value.trim()) isValid = false;
+
+        if (areaMode === 'select' && !document.getElementById('area_id').value) isValid = false;
+        if (areaMode === 'new' && !document.getElementById('new_area_name').value.trim()) isValid = false;
+
+        if (propMode === 'select' && !document.getElementById('property_id').value) isValid = false;
+        if (propMode === 'new' && !document.getElementById('new_property_name').value.trim()) isValid = false;
+
+        nextBtn.disabled = !isValid;
+    }
+
+    function checkStep2Validation() {
+        const nextBtn = document.getElementById('step-2-next');
+        const unitMode = getRadioValue('unit_mode');
+        
+        let isValid = true;
+        if (unitMode === 'select' && !document.getElementById('unit_id').value) isValid = false;
+        if (unitMode === 'new' && !document.getElementById('new_unit_name').value.trim()) isValid = false;
+
+        nextBtn.disabled = !isValid;
+    }
+
+    function checkStep3Validation() {
+        const nextBtn = document.getElementById('step-3-next');
+        const tenantMode = getRadioValue('tenant_mode');
+        
+        let isValid = true;
+        if (tenantMode === 'select' && !document.getElementById('tenant_id').value) isValid = false;
+        if (tenantMode === 'new') {
+            const name = document.getElementById('new_tenant_name').value.trim();
+            const phone = document.getElementById('new_tenant_phone').value.trim();
+            if (!name || !phone) isValid = false;
+        }
+
+        nextBtn.disabled = !isValid;
+    }
+
+    // Helpers
+    function setRadioValue(name, value) {
+        const radios = document.getElementsByName(name);
+        for (let r of radios) {
+            if (r.value === value) {
+                r.checked = true;
+                break;
+            }
+        }
+    }
+
+    function getRadioValue(name) {
+        const radios = document.getElementsByName(name);
+        for (let r of radios) {
+            if (r.checked) return r.value;
+        }
+        return '';
+    }
+
+    function setLabelDisabled(labelId, isDisabled) {
+        const label = document.getElementById(labelId);
+        if (!label) return;
+        if (isDisabled) {
+            label.classList.add('opacity-50', 'pointer-events-none');
+            label.querySelector('input').disabled = true;
+        } else {
+            label.classList.remove('opacity-50', 'pointer-events-none');
+            label.querySelector('input').disabled = false;
+        }
+    }
+
+    function resetPropertySelector() {
+        const propSelect = document.getElementById('property_id');
+        propSelect.innerHTML = '<option value="">-- Choose Property --</option>';
+        propSelect.disabled = true;
+        propSelect.classList.add('opacity-60');
+    }
+
+    function resetUnitSelector() {
+        const unitSelect = document.getElementById('unit_id');
+        unitSelect.innerHTML = '<option value="">-- Choose Unit --</option>';
+    }
+
+    // Setup Event listeners to instantly update validations on field revisions
+    document.addEventListener('DOMContentLoaded', () => {
+        // Step 1 inputs
+        document.getElementById('city_id').addEventListener('change', checkStep1Validation);
+        document.getElementById('new_city_name').addEventListener('input', checkStep1Validation);
+        document.getElementById('area_id').addEventListener('change', checkStep1Validation);
+        document.getElementById('new_area_name').addEventListener('input', checkStep1Validation);
+        document.getElementById('property_id').addEventListener('change', checkStep1Validation);
+        document.getElementById('new_property_name').addEventListener('input', checkStep1Validation);
+
+        // Step 2 inputs
+        document.getElementById('unit_id').addEventListener('change', checkStep2Validation);
+        document.getElementById('new_unit_name').addEventListener('input', checkStep2Validation);
+
+        // Intial runs
+        checkStep1Validation();
+        checkStep2Validation();
+        checkStep3Validation();
+    });
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,45 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Areas &gt; <span class="text-zinc-200">Add Sector</span></div>
+        <a href="/areas" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Back to list</a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto max-w-xl space-y-6">
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">Add Area / Sector</h1>
+            <p class="text-zinc-500 text-xs mt-1">Sectors help map property portfolios, e.g. Saddar inside Peshawar, F-6 inside Islamabad, etc.</p>
+        </div>
+
+        <form action="/areas/add" method="POST" class="bg-[#111111] border border-[#262626] p-6 rounded-xl space-y-4">
+            <div>
+                <label for="city_id" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Select City</label>
+                <select id="city_id" name="city_id" required
+                        class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    <% cities.forEach(c => { %>
+                        <option value="<%= c.id %>" <%= typeof p_city_id !== 'undefined' && p_city_id === c.id ? 'selected' : '' %>><%= c.name %> (<%= c.province %>)</option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div>
+                <label for="name" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Area / Sector Name</label>
+                <input type="text" id="name" name="name" required placeholder="e.g. Saddar"
+                       class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/25 transition-all">
+            </div>
+
+            <div class="pt-4 border-t border-[#1F1F1F] flex justify-end gap-3">
+                <a href="/areas" class="px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-zinc-400 hover:text-white border border-[#262626] text-xs font-semibold rounded-md transition-all">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-md transition-all">
+                    Add Sector
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

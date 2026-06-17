@@ -1,0 +1,158 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">
+            Properties &gt; <a href="/properties?city_id=<%= property.city_id %>" class="hover:text-blue-400 underline"><%= property.city_name %></a> &gt; <span class="text-zinc-200"><%= property.name %></span>
+        </div>
+        <div class="flex gap-2">
+            <a href="/properties/<%= property.id %>/edit" class="px-4 py-1.5 bg-[#1C1C1E] text-zinc-300 text-xs font-semibold rounded border border-[#2E2E30] hover:text-white transition-colors">
+                Edit Property Details
+            </a>
+            <form action="/properties/<%= property.id %>/delete" method="POST" class="inline" 
+                  onsubmit="return confirm('WARNING: Are you sure you want to delete this Property? Deleting a property will remove all virtual floors and unrented units.');">
+                <button type="submit" class="px-4 py-1.5 bg-red-950/20 border border-red-900/30 text-red-400 text-xs font-semibold rounded hover:bg-red-900/40 transition-colors">
+                    Delete Property
+                </button>
+            </form>
+            <a href="/units/add?property_id=<%= property.id %>" class="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded hover:bg-zinc-200 transition-colors">
+                + Add Unit Box
+            </a>
+        </div>
+    </header>
+
+    <!-- Content area -->
+    <div class="p-8 flex-1 overflow-y-auto space-y-8">
+        
+        <!-- Header Info Card -->
+        <div class="bg-[#111111] border border-[#262626] rounded-xl p-6 flex flex-col lg:flex-row gap-6 justify-between items-start">
+            <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                    <span class="px-2.5 py-0.5 bg-blue-950/40 border border-blue-500/20 text-blue-400 font-mono text-[9px] uppercase font-bold tracking-wide rounded-md">
+                        <%= property.property_type %>
+                    </span>
+                    <span class="px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-[9px] uppercase font-bold tracking-wide rounded-md">
+                        <%= property.city_name %> &bull; <%= property.area_name %>
+                    </span>
+                </div>
+                <h1 class="text-white text-2xl font-bold tracking-tight"><%= property.name %></h1>
+                <p class="text-zinc-400 text-xs max-w-xl leading-relaxed"><%= property.address %></p>
+                <% if(property.description) { %>
+                    <p class="text-[11px] text-zinc-500 border-l border-zinc-700 pl-3 italic mt-2"><%= property.description %></p>
+                <% } %>
+            </div>
+
+            <!-- Rent summary and counts -->
+            <div class="w-full lg:w-auto bg-[#161616] p-4 rounded-lg border border-[#262626] grid grid-cols-2 lg:flex gap-4 lg:gap-8 justify-between shrink-0">
+                <div class="px-2">
+                    <div class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Expected Monthly Rent</div>
+                    <div class="text-lg font-bold text-white font-mono mt-1">₨ <%= rentSummary.expected.toLocaleString() %></div>
+                </div>
+                <div class="px-2 border-l border-[#1F1F1F] max-lg:border-none">
+                    <div class="text-[9px] font-bold text-emerald-500/80 uppercase tracking-widest">Rented Units</div>
+                    <div class="text-lg font-bold text-emerald-400 font-mono mt-1"><%= rentSummary.rented %> <span class="text-xs text-zinc-500 font-normal">/ <%= rentSummary.total %></span></div>
+                </div>
+                <div class="px-2 border-l border-[#1F1F1F]">
+                    <div class="text-[9px] font-bold text-red-500/80 uppercase tracking-widest">Vacant Units</div>
+                    <div class="text-lg font-bold text-red-400 font-mono mt-1"><%= rentSummary.vacant %> Unit(s)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Floor / Section Quick Form Panel -->
+        <div class="bg-[#111111]/60 border border-[#1F1F1F] p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <h3 class="text-white text-xs font-bold uppercase tracking-wider">Floors / Property Sections</h3>
+                <p class="text-zinc-500 text-[11px]">Define building levels like "Ground Floor", "First Floor", "Block A" to organize rentable rooms or shops.</p>
+            </div>
+            
+            <form action="/floors/add" method="POST" class="flex gap-2 w-full md:w-auto">
+                <input type="hidden" name="property_id" value="<%= property.id %>">
+                <input type="text" name="name" required placeholder="e.g. Ground Floor" 
+                       class="px-3 py-1.5 bg-[#161616] border border-[#262626] rounded text-white text-xs placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 w-full md:w-48 transition-colors">
+                <button type="submit" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs rounded border border-zinc-700 transition-all shrink-0">
+                    + Add Section
+                </button>
+            </form>
+        </div>
+
+        <!-- Render Floor Sections & Unit Boxes Grid -->
+        <div class="space-y-6">
+            <% if (floors && floors.length > 0) { %>
+                <% floors.forEach(floor => { %>
+                    <div class="bg-[#111111] border border-[#262626] rounded-xl p-5 space-y-4 shadow-md">
+                        <!-- Floor Header -->
+                        <div class="flex justify-between items-center border-b border-[#262626] pb-3">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-white font-bold text-sm tracking-tight capitalize"><%= floor.name %></h3>
+                                <span class="bg-[#161616] px-2 py-0.5 border border-[#1F1F1F] rounded-md text-[10px] font-mono font-medium text-zinc-400">
+                                    <%= floor.units ? floor.units.length : 0 %> Rentable Unit(s)
+                                </span>
+                            </div>
+                            
+                            <!-- Delete Floor only if it serves 0 units -->
+                            <% if (!floor.units || floor.units.length === 0) { %>
+                                <form action="/floors/<%= floor.id %>/delete" method="POST" onsubmit="return confirm('Remove empty floor level?');">
+                                    <input type="hidden" name="property_id" value="<%= property.id %>">
+                                    <button type="submit" class="text-[10px] text-red-400 hover:text-red-300 transition-colors">
+                                        Delete Section &times;
+                                    </button>
+                                </form>
+                            <% } %>
+                        </div>
+
+                        <!-- Grid representing unit boxes (Green = rented, Red = vacant, Yellow = pending status) -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                            <% if (floor.units && floor.units.length > 0) { %>
+                                <% floor.units.forEach(unit => { %>
+                                                                  <% 
+                                      // Choose clean card style and keep only badges colored
+                                      let statusClass = "";
+                                      let labelClass = "";
+                                      const currentStatus = String(unit.status || '').toLowerCase();
+
+                                      if (currentStatus === 'rented') {
+                                        statusClass = "bg-white border-emerald-300 hover:border-emerald-500 text-slate-950";
+                                        labelClass = "bg-emerald-600 text-white border-emerald-700";
+                                      } else if (currentStatus === 'vacant') {
+                                        statusClass = "bg-white border-red-300 hover:border-red-500 text-slate-950";
+                                        labelClass = "bg-red-900 text-white border-red-950";
+                                      } else {
+                                        statusClass = "bg-white border-amber-300 hover:border-amber-500 text-slate-950";
+                                        labelClass = "bg-yellow-500 text-slate-950 border-yellow-600";
+                                      }
+                                    %>
+                                    <div class="border rounded-xl p-4 flex flex-col justify-between h-28 cursor-pointer select-none transition-all shadow-md <%= statusClass %>"
+                                         onclick="window.location.href='/units/<%= unit.id %>'">
+                                        <div class="flex justify-between items-start">
+                                          <span class="text-xs font-mono font-bold tracking-tight text-slate-950"><%= unit.name %></span>
+                                            <span class="text-[8px] font-extrabold tracking-wide px-1.5 py-0.5 rounded border uppercase <%= labelClass %>"><%= unit.status %></span>
+                                        </div>
+                                                                                <div class="mt-4 pt-1 border-t border-slate-200">
+                                            <div class="text-[9px] text-slate-600 uppercase font-black">Monthly Rent</div>
+                                            <div class="text-xs font-mono font-bold mt-0.5 text-slate-950">₨ <%= (unit.rent_amount / 1000).toFixed(0) %>k</div>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="col-span-full border border-dashed border-[#262626] p-4 text-center rounded-lg text-xs text-zinc-500">
+                                    No units deployed under <%= floor.name %> section. 
+                                    <a href="/units/add?property_id=<%= property.id %>&floor_id=<%= floor.id %>" class="text-blue-400 font-bold hover:underline">Deploy unit box &rarr;</a>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="bg-[#111111] border border-[#262626] p-12 text-center rounded-xl text-zinc-500">
+                    <p>No floor sections registered. Standard practice requires adding at least one floor (e.g. Ground Floor) to enable rental operations.</p>
+                </div>
+            <% } %>
+        </div>
+
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

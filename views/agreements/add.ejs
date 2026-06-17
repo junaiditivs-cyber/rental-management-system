@@ -1,0 +1,123 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Agreements &gt; <span class="text-zinc-200">Issue New Contract</span></div>
+        <a href="javascript:history.back()" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Cancel</a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto max-w-2xl space-y-6">
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">Initiate Tenant Rent Agreement</h1>
+            <p class="text-zinc-500 text-xs mt-1">Bind a designated tenant profile to a vacant rental unit block. This changes the unit occupancy status to Rented.</p>
+        </div>
+
+        <form action="/agreements/add" method="POST" class="bg-[#111111] border border-[#262626] p-6 rounded-xl space-y-4">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="tenant_id" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Primary Tenant Profile</label>
+                    <select id="tenant_id" name="tenant_id" required
+                            class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        <option value="">-- Choose Tenant --</option>
+                        <% tenants.forEach(t => { %>
+                            <option value="<%= t.id %>"><%= t.name %> (CNIC: <%= t.cnic %>)</option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="unit_id" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Target Unit (Only Vacant)</label>
+                    <select id="unit_id" name="unit_id" required onchange="applyUnitRates(this.value)"
+                            class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        <option value="">-- Choose Unit --</option>
+                        <% units.forEach(u => { %>
+                            <option value="<%= u.id %>" <%= typeof p_unit_id !== 'undefined' && p_unit_id === u.id ? 'selected' : '' %> data-rent="<%= u.rent_amount %>" data-advance="<%= u.advance_amount %>">
+                                <%= u.name %> (<%= u.property_name %> - Level: <%= u.floor_name %>)
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="monthly_rent" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Negotiated Monthly Rent (PKR)</label>
+                    <input type="number" id="monthly_rent" name="monthly_rent" required min="0" placeholder="30000"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+
+                <div>
+                    <label for="advance_amount" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Collected Advance security (PKR)</label>
+                    <input type="number" id="advance_amount" name="advance_amount" required min="0" placeholder="100000"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label for="start_date" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Agreement Start Date</label>
+                    <input type="date" id="start_date" name="start_date" required value="<%= new Date().toISOString().split('T')[0] %>"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Agreement End Date</label>
+                    <input type="date" id="end_date" name="end_date" required value="<%= new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0] %>"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                </div>
+
+                <div>
+                    <label for="due_day" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Rent Due Day of Month</label>
+                    <input type="number" id="due_day" name="due_day" required min="1" max="28" value="5"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
+                </div>
+            </div>
+
+            <div>
+                <label for="agreement_doc_url" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Agreement Legal File / Document URL (Optional)</label>
+                <input type="url" id="agreement_doc_url" name="agreement_doc_url" placeholder="https://drive.google.com/example-legal-file"
+                       class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
+                <span class="text-[10px] text-zinc-500 mt-1 block">Leaving this blank won't prevent agreement registration.</span>
+            </div>
+
+            <div>
+                <label for="notes" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Agreed Conditions / Custom Notes</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Condition details, sub-meter readings when handling possession..."
+                          class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all"></textarea>
+            </div>
+
+            <div class="pt-4 border-t border-[#1F1F1F] flex justify-end gap-3">
+                <button type="button" onclick="history.back()" class="px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-zinc-400 hover:text-white border border-[#262626] text-xs font-semibold rounded-md transition-all">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-md transition-all">
+                    Activate Contract
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    function applyUnitRates(unitId) {
+        if (!unitId) return;
+        const selectNode = document.getElementById('unit_id');
+        const selectedOpt = selectNode.options[selectNode.selectedIndex];
+        
+        const rent = selectedOpt.getAttribute('data-rent');
+        const advance = selectedOpt.getAttribute('data-advance');
+        
+        if (rent) document.getElementById('monthly_rent').value = rent;
+        if (advance) document.getElementById('advance_amount').value = advance;
+    }
+
+    // Auto run rates on start if already preselected
+    document.addEventListener('DOMContentLoaded', () => {
+        applyUnitRates(document.getElementById('unit_id').value);
+    });
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,86 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Overview &gt; <span class="text-zinc-200">Rentable Unit Inventory</span></div>
+        <a href="/units/add" class="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded hover:bg-zinc-200 transition-all">
+            + Deploy Unit Box
+        </a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto space-y-6">
+        <div>
+            <h1 class="text-white text-xl font-bold tracking-tight">Units &amp; Rooms Database</h1>
+            <p class="text-zinc-500 text-xs mt-1">Detailed inventory of all shops, basements, and flats mapping renting lists.</p>
+        </div>
+
+        <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                        <th class="p-4">Unit Box</th>
+                        <th class="p-4">Mapped Property / Level</th>
+                        <th class="p-4">Type</th>
+                        <th class="p-4">Rent Criteria</th>
+                        <th class="p-4">Status</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#1F1F1F] text-zinc-300">
+                    <% if (units && units.length > 0) { %>
+                        <% units.forEach(u => { %>
+                            <tr class="hover:bg-[#161616]/30 transition-colors">
+                                <td class="p-4 font-semibold text-white">
+                                    <a href="/units/<%= u.id %>" class="hover:text-blue-400 font-medium flex items-center gap-2 transition-colors">
+                                        <%= u.name %>
+                                    </a>
+                                </td>
+                                <td class="p-4">
+                                    <div class="font-medium text-zinc-200"><%= u.property_name %></div>
+                                    <div class="text-[10px] text-zinc-500 capitalize"><%= u.floor_name %></div>
+                                </td>
+                                <td class="p-4 font-mono text-xs text-zinc-400"><%= u.unit_type %></td>
+                                <td class="p-4">
+                                    <div class="text-white font-mono font-bold text-xs">₨ <%= u.rent_amount.toLocaleString() %>/mo</div>
+                                    <div class="text-[9px] text-zinc-500 font-mono">Sec. Deposit: ₨ <%= u.advance_amount.toLocaleString() %></div>
+                                </td>
+                                <td class="p-4">
+                                    <% 
+                                      let fillClass = "";
+                                      if (u.status.toLowerCase() === 'rented') {
+                                        fillClass = "bg-emerald-950/80 text-emerald-400 border-emerald-800/35";
+                                      } else if (u.status.toLowerCase() === 'vacant') {
+                                        fillClass = "bg-red-950/80 text-red-400 border-red-800/35";
+                                      } else {
+                                        fillClass = "bg-amber-950/80 text-amber-400 border-amber-800/35";
+                                      }
+                                    %>
+                                    <span class="px-2 py-0.5 border rounded text-[9px] font-bold font-mono tracking-wider uppercase <%= fillClass %>">
+                                        <%= u.status %>
+                                    </span>
+                                </td>
+                                <td class="p-4 text-right space-x-2 shrink-0">
+                                    <a href="/units/<%= u.id %>" class="text-xs text-zinc-300 hover:text-white bg-[#1C1C1E] border border-zinc-800 px-2 py-1 rounded">
+                                        Manage
+                                    </a>
+                                    <a href="/units/<%= u.id %>/edit" class="text-xs text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 px-2 py-1 rounded">
+                                        Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-zinc-500">
+                                No units configured in the layout. Add a property and floor first, then deploy rentable units.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

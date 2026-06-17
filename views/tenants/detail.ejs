@@ -1,0 +1,154 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Tenants &gt; <span class="text-zinc-200 font-medium"><%= tenant.name %> Profile</span></div>
+        <div class="flex gap-2">
+            <a href="/tenants/<%= tenant.id %>/edit" class="px-3 py-1.5 bg-[#1C1C1E] border border-zinc-800 text-zinc-300 text-xs font-semibold rounded hover:text-white transition-colors">
+                Modify Profile
+            </a>
+            <form action="/tenants/<%= tenant.id %>/delete" method="POST" class="inline" 
+                  onsubmit="return confirm('WARNING: Are you sure you want to delete this Tenant? Removing a tenant will affect any linked lease history and payment archives.');">
+                <button type="submit" class="px-3 py-1.5 bg-red-950/20 border border-red-900/30 text-red-400 text-xs font-semibold rounded hover:bg-red-900/40 transition-colors">
+                    Delete profile
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <div class="p-8 flex-1 overflow-y-auto space-y-8">
+        
+        <!-- Header Profile Banner -->
+        <div class="bg-[#111111] border border-[#262626] rounded-xl p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-lg">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-800 border border-zinc-700 font-bold text-white text-xl flex items-center justify-center select-none">
+                    <%= tenant.name.split(' ').map(n=>n[0]).join('').slice(0, 2).toUpperCase() %>
+                </div>
+                <div>
+                    <h1 class="text-white text-2xl font-black tracking-tight"><%= tenant.name %></h1>
+                    <p class="text-zinc-400 text-xs mt-0.5">Father: <strong class="text-zinc-300"><%= tenant.father_name %></strong> &bull; Registered On: <strong class="text-zinc-300 font-mono"><%= new Date(tenant.created_at).toLocaleDateString() %></strong></p>
+                </div>
+            </div>
+
+            <!-- Lease Indicator -->
+            <div>
+                <% if(agreements && agreements.some(a=>a.status === 'Active')) { %>
+                    <span class="px-3 py-1.5 bg-emerald-950/65 border border-emerald-500/20 text-[#10B981] font-mono text-xs font-bold rounded-lg uppercase tracking-wide">Active Leasehold Contracts</span>
+                <% } else { %>
+                    <span class="px-3 py-1.5 bg-zinc-900 border border-zinc-850 text-zinc-500 font-mono text-xs font-bold rounded-lg uppercase tracking-wide">No active agreements</span>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Section Info Blocks -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Information profile -->
+            <div class="lg:col-span-2 bg-[#111111] border border-[#262626] rounded-xl p-6 space-y-6 shadow-md">
+                <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-[#1F1F1F] pb-2">Profile Specifications</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    <div>
+                        <div class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">CNIC Card Number</div>
+                        <div class="text-zinc-200 mt-1 font-mono font-bold text-base"><%= tenant.cnic %></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Mobile Contact</div>
+                        <div class="text-zinc-200 mt-1 font-mono font-bold text-base"><%= tenant.phone %></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Emergency Reference</div>
+                        <div class="text-zinc-300 mt-1"><%= tenant.emergency_contact %></div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Registered Address</div>
+                        <div class="text-zinc-300 mt-1 text-xs leading-relaxed"><%= tenant.address %></div>
+                    </div>
+                </div>
+
+                <% if (tenant.notes) { %>
+                    <div class="pt-4 border-t border-[#1F1F1F]">
+                        <h4 class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">Internal Administration logs</h4>
+                        <p class="text-zinc-400 text-xs bg-zinc-950 p-4 border border-zinc-900 rounded-md leading-relaxed"><%= tenant.notes %></p>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- CNIC image triggers -->
+            <div class="lg:col-span-1 bg-[#111111] border border-[#262626] rounded-xl p-6 space-y-4 shadow-md">
+                <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest border-b border-[#1F1F1F] pb-2">Document Attachments</h3>
+                
+                <div class="space-y-4">
+                    <div class="border border-zinc-800 rounded-lg p-3 bg-zinc-950">
+                        <span class="text-[10px] text-zinc-500 block">CNIC CARD FRONT PHOTO</span>
+                        <% if (tenant.cnic_front_url) { %>
+                            <a href="<%= tenant.cnic_front_url %>" target="_blank" class="text-xs text-blue-400 font-bold hover:underline block mt-1.5" referrerpolicy="no-referrer">Inspect Photo Front &darr;</a>
+                        <% } else { %>
+                            <span class="text-xs text-zinc-650 block mt-1">Not uploaded</span>
+                        <% } %>
+                    </div>
+                    <div class="border border-zinc-800 rounded-lg p-3 bg-zinc-950">
+                        <span class="text-[10px] text-zinc-500 block">CNIC CARD BACK PHOTO</span>
+                        <% if (tenant.cnic_back_url) { %>
+                            <a href="<%= tenant.cnic_back_url %>" target="_blank" class="text-xs text-blue-400 font-bold hover:underline block mt-1.5" referrerpolicy="no-referrer">Inspect Photo Back &darr;</a>
+                        <% } else { %>
+                            <span class="text-xs text-zinc-650 block mt-1">Not uploaded</span>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rent Agreement records -->
+        <div class="space-y-4">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Lease Terms &amp; Contract History</h3>
+            <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                            <th class="p-4">Allotted Unit</th>
+                            <th class="p-4">Monthly rent</th>
+                            <th class="p-4">Security Deposit</th>
+                            <th class="p-4">Contract Dates</th>
+                            <th class="p-4">Due Day</th>
+                            <th class="p-4 text-right">Lease Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1F1F1F] text-zinc-300 font-mono">
+                        <% if (agreements && agreements.length > 0) { %>
+                            <% agreements.forEach(ag => { %>
+                                <tr class="hover:bg-[#161616]/20">
+                                    <td class="p-4 font-sans font-semibold">
+                                        <a href="/units/<%= ag.unit_id %>" class="hover:text-blue-400 text-white font-medium underline decoration-dotted"><%= ag.unit_name %></a>
+                                    </td>
+                                    <td class="p-4">₨ <%= ag.monthly_rent.toLocaleString() %>/mo</td>
+                                    <td class="p-4">₨ <%= ag.advance_amount.toLocaleString() %></td>
+                                    <td class="p-4 text-zinc-400"><%= ag.start_date %> to <%= ag.end_date %></td>
+                                    <td class="p-4 font-sans text-zinc-400">Day <%= ag.due_day %> of month</td>
+                                    <td class="p-4 text-right">
+                                        <% if(ag.status === 'Active') { %>
+                                            <span class="text-emerald-400 text-[9px] font-sans font-bold bg-emerald-950/40 border border-emerald-900/30 px-2 py-0.5 rounded">Active</span>
+                                        <% } else { %>
+                                            <span class="text-zinc-500 text-[9px] font-sans font-bold bg-zinc-900 px-2 py-0.5 rounded">Completed</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="p-8 text-center text-zinc-500 font-sans">No agreements found configured.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

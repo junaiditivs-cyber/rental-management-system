@@ -1,0 +1,81 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Overview &gt; <span class="text-zinc-200">Rent Agreements</span></div>
+        <a href="/agreements/add" class="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded hover:bg-zinc-200 transition-all">
+            + Initiate Agreement
+        </a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto space-y-6">
+        <div>
+            <h1 class="text-white text-xl font-bold tracking-tight">Active &amp; Expired Agreements</h1>
+            <p class="text-zinc-500 text-xs mt-1">Legallty binding contracts connecting tenants to active rental properties across Pakistan cities.</p>
+        </div>
+
+        <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                        <th class="p-4">Tenant</th>
+                        <th class="p-4">Unit / Property Name</th>
+                        <th class="p-4">Monthly Rent</th>
+                        <th class="p-4">Advanced Security</th>
+                        <th class="p-4">Contract Period</th>
+                        <th class="p-4">Status</th>
+                        <th class="p-4 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#1F1F1F] text-zinc-300">
+                    <% if (agreements && agreements.length > 0) { %>
+                        <% agreements.forEach(ag => { %>
+                            <tr class="hover:bg-[#161616]/30 transition-colors">
+                                <td class="p-4 font-semibold text-white">
+                                    <a href="/tenants/<%= ag.tenant_id %>" class="hover:text-blue-400 font-medium transition-colors">
+                                        <%= ag.tenant_name %>
+                                    </a>
+                                </td>
+                                <td class="p-4">
+                                    <div class="text-zinc-200 font-medium"><a href="/units/<%= ag.unit_id %>" class="hover:underline"><%= ag.unit_name %></a></div>
+                                    <div class="text-[10px] text-zinc-500 capitalize"><%= ag.property_name %></div>
+                                </td>
+                                <td class="p-4 font-mono font-bold text-xs">₨ <%= ag.monthly_rent.toLocaleString() %>/mo</td>
+                                <td class="p-4 font-mono text-zinc-400 text-xs">₨ <%= ag.advance_amount.toLocaleString() %></td>
+                                <td class="p-4 font-mono text-xs text-zinc-400"><%= ag.start_date %> to <%= ag.end_date %></td>
+                                <td class="p-4">
+                                    <% if (ag.status === 'Active') { %>
+                                        <span class="px-2.5 py-0.5 bg-emerald-950/80 border border-emerald-900/35 text-emerald-400 text-[10px] font-bold font-mono tracking-wide rounded inline-block">
+                                            ACTIVE
+                                        </span>
+                                    <% } else { %>
+                                        <span class="px-2.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-500 text-[10px] font-bold font-mono tracking-wide rounded inline-block">
+                                            ENDED
+                                        </span>
+                                    <% } %>
+                                </td>
+                                <td class="p-4 text-right space-x-2 shrink-0">
+                                    <a href="/agreements/<%= ag.id %>" class="text-xs text-zinc-300 hover:text-white bg-[#1C1C1E] border border-zinc-800 px-2 py-1 rounded">
+                                        View Detail
+                                    </a>
+                                    <a href="/agreements/<%= ag.id %>/edit" class="text-xs text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 px-2 py-1 rounded">
+                                        Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-zinc-500">
+                                No active agreements currently stored. Initiate a contract above.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

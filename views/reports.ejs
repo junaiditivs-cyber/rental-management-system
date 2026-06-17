@@ -1,0 +1,156 @@
+<%- include('partials/header') %>
+<%- include('partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Analytics &gt; <span class="text-zinc-200">Management Reports</span></div>
+        <button onclick="window.print()" class="px-3 py-1.5 bg-[#1F1F1F] border border-[#262626] text-zinc-300 text-xs font-semibold rounded hover:text-white transition-all">
+            Print Ledger Report
+        </button>
+    </header>
+
+    <!-- Content Panel -->
+    <div class="p-8 flex-1 overflow-y-auto space-y-8">
+        <div>
+            <h1 class="text-white text-2xl font-black tracking-tight">Portfolio Financial Intelligence Report</h1>
+            <p class="text-zinc-550 text-xs mt-1">Consolidated analytics summarizing city-wise active property performance, tenant occupancy status, and pending rent arrears across Pakistan.</p>
+        </div>
+
+        <!-- Global Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-xl">
+                <span class="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">Total Cities Managed</span>
+                <div class="text-2xl font-bold text-white font-mono mt-1"><%= citySummaries.length %></div>
+            </div>
+            
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-xl">
+                <span class="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">Total Active Units Portfolio</span>
+                <div class="text-2xl font-bold text-white font-mono mt-1">
+                    <%= citySummaries.reduce((acc, c) => acc + c.totalUnits, 0) %>
+                </div>
+            </div>
+
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-xl">
+                <span class="text-[9px] uppercase font-bold text-emerald-500/80 tracking-wider">Occupancy Retention Rate</span>
+                <% 
+                   const totalAllUnits = citySummaries.reduce((acc, c) => acc + c.totalUnits, 0);
+                   const totalAllRented = citySummaries.reduce((acc, c) => acc + c.rentedUnits, 0);
+                   const occupancyRate = totalAllUnits > 0 ? ((totalAllRented / totalAllUnits) * 100).toFixed(1) : "0.0";
+                %>
+                <div class="text-2xl font-bold text-emerald-400 font-mono mt-1">
+                    <%= occupancyRate %>% <span class="text-[10px] text-zinc-500 font-sans font-normal">(<%= totalAllRented %>/<%= totalAllUnits %> active)</span>
+                </div>
+            </div>
+
+            <div class="bg-[#111111] border border-[#262626] p-5 rounded-xl">
+                <span class="text-[9px] uppercase font-bold text-amber-500/80 tracking-wider">Aggregate Outstanding Arrears</span>
+                <% 
+                   const totalAllPending = citySummaries.reduce((acc, c) => acc + c.pendingRentArrears, 0);
+                %>
+                <div class="text-2xl font-bold text-amber-400 font-mono mt-1">₨ <%= totalAllPending.toLocaleString() %></div>
+            </div>
+        </div>
+
+        <!-- Municipal Territory Intelligence Breakdowns -->
+        <div class="space-y-4">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest">City-Wise Regional performance analysis</h3>
+            
+            <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+                <table class="w-full text-left border-collapse text-xs font-sans">
+                    <thead>
+                        <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                            <th class="p-4">Municipal City</th>
+                            <th class="p-4">Registered Properties</th>
+                            <th class="p-4">Occupied Units</th>
+                            <th class="p-4">Vacant Units</th>
+                            <th class="p-4">Accumulated Collection</th>
+                            <th class="p-4">Outstanding Arrears</th>
+                            <th class="p-4 text-right">Occupancy Velocity</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1F1F1F] text-zinc-300 font-mono">
+                        <% if (citySummaries && citySummaries.length > 0) { %>
+                            <% citySummaries.forEach(city => { %>
+                                <tr class="hover:bg-[#161616]/30">
+                                    <td class="p-4 font-sans font-bold text-zinc-100"><%= city.name %></td>
+                                    <td class="p-4 text-zinc-400"><%= city.propertyCount %> Property(s)</td>
+                                    <td class="p-4 text-emerald-400 font-bold"><%= city.rentedUnits %> Units</td>
+                                    <td class="p-4 text-red-400 font-bold"><%= city.vacantUnits %> Units</td>
+                                    <td class="p-4 text-white">₨ <%= city.totalCollected.toLocaleString() %></td>
+                                    <td class="p-4 text-amber-400 font-bold">₨ <%= city.pendingRentArrears.toLocaleString() %></td>
+                                    <td class="p-4 text-right">
+                                        <% 
+                                           const rate = city.totalUnits > 0 ? ((city.rentedUnits / city.totalUnits) * 100).toFixed(0) : 0;
+                                        %>
+                                        <div class="flex items-center justify-end gap-2 font-sans font-bold">
+                                            <div class="w-16 bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                                                <div class="bg-emerald-500 h-full" style="width: <%= rate %>%"></div>
+                                            </div>
+                                            <span class="<%= rate > 75 ? 'text-emerald-400' : rate > 40 ? 'text-amber-400' : 'text-zinc-500' %>"><%= rate %>%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-zinc-550 font-sans">No city data available. Config cities and properties first.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Extra: Arrears Recovery List -->
+        <div class="space-y-4">
+            <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest text-amber-500">Critical Recovery Ledger (Unit Arrears &gt; ₨ 0)</h3>
+            <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
+                            <th class="p-4">Tenant In-Charge</th>
+                            <th class="p-4">Contact Primary</th>
+                            <th class="p-4">Allotted Unit Node</th>
+                            <th class="p-4">Period Period</th>
+                            <th class="p-4">Expected Rent</th>
+                            <th class="p-4">Arrears balance</th>
+                            <th class="p-4 text-right">Status Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#1F1F1F] text-zinc-300 font-mono">
+                        <% if (criticalArrears && criticalArrears.length > 0) { %>
+                            <% criticalArrears.forEach(item => { %>
+                                <tr class="hover:bg-[#161616]/30">
+                                    <td class="p-4 font-sans font-semibold text-white">
+                                        <a href="/tenants/<%= item.tenant_id %>" class="hover:text-blue-400 underline decoration-dotted"><%= item.tenant_name %></a>
+                                    </td>
+                                    <td class="p-4 text-zinc-400"><%= item.tenant_phone %></td>
+                                    <td class="p-4 font-sans">
+                                        <div class="text-zinc-200"><%= item.unit_name %></div>
+                                        <div class="text-[9px] text-zinc-500 capitalize"><%= item.property_name %></div>
+                                    </td>
+                                    <td class="p-4 font-mono text-zinc-400">Month: <%= item.rent_month %> Year: <%= item.rent_year %></td>
+                                    <td class="p-4">₨ <%= item.total_rent.toLocaleString() %></td>
+                                    <td class="p-4 text-red-400 font-bold text-sm">₨ <%= item.pending_amount.toLocaleString() %></td>
+                                    <td class="p-4 text-right font-sans">
+                                        <a href="/rent/collect?unit_id=<%= item.unit_id %>" class="px-2 py-1 bg-amber-950/40 border border-[#452D12]/30 text-amber-400 hover:text-white rounded text-[10px] font-bold">
+                                            Clear Arrears
+                                        </a>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" class="p-8 text-center text-zinc-550 font-sans">No critical outstanding arrears found. Splendid job on collections!</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<%- include('partials/footer') %>

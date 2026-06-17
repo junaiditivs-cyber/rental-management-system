@@ -1,0 +1,127 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Properties &gt; <span class="text-zinc-200">Edit property details</span></div>
+        <a href="/properties" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Back to list</a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto max-w-2xl space-y-6">
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">Edit Registered Property</h1>
+            <p class="text-zinc-500 text-xs mt-1">Modify location, type, general address, or availability flags.</p>
+        </div>
+
+        <form action="/properties/<%= property.id %>/edit" method="POST" class="bg-[#111111] border border-[#262626] p-6 rounded-xl space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Property Name</label>
+                    <input type="text" id="name" name="name" required placeholder="e.g. ABC Plaza" value="<%= property.name %>"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+
+                <div>
+                    <label for="property_type" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Property Type</label>
+                    <select id="property_type" name="property_type" required
+                            class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        <option value="Plaza" <%= property.property_type === 'Plaza' ? 'selected' : '' %>>Plaza</option>
+                        <option value="House" <%= property.property_type === 'House' ? 'selected' : '' %>>House</option>
+                        <option value="Shop Line" <%= property.property_type === 'Shop Line' ? 'selected' : '' %>>Shop Line</option>
+                        <option value="Flat Building" <%= property.property_type === 'Flat Building' ? 'selected' : '' %>>Flat Building</option>
+                        <option value="Basement" <%= property.property_type === 'Basement' ? 'selected' : '' %>>Basement</option>
+                        <option value="Office Building" <%= property.property_type === 'Office Building' ? 'selected' : '' %>>Office Building</option>
+                        <option value="Room Building" <%= property.property_type === 'Room Building' ? 'selected' : '' %>>Room Building</option>
+                        <option value="Other" <%= property.property_type === 'Other' ? 'selected' : '' %>>Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="city_select" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">City</label>
+                    <select id="city_select" name="city_id" required onchange="filterAreasByCity(this.value)"
+                            class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        <% cities.forEach(c => { %>
+                            <option value="<%= c.id %>" <%= property.city_id === c.id ? 'selected' : '' %>><%= c.name %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="area_select" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Area / Sector</label>
+                    <select id="area_select" name="area_id" required
+                            class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                        <!-- Filled in via client JS -->
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label for="address" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Physical Address</label>
+                <input type="text" id="address" name="address" required placeholder="e.g. Main Saddar Road, Peshawar Campus" value="<%= property.address %>"
+                       class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-blue-500/80 transition-all">
+            </div>
+
+            <div>
+                <label for="description" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Description / Access Notes (Optional)</label>
+                <textarea id="description" name="description" rows="3" placeholder="Add custom notes..."
+                          class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all"><%= property.description %></textarea>
+            </div>
+
+            <div>
+                <label for="img_url" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Preview Image Link (Optional)</label>
+                <input type="url" id="img_url" name="img_url" placeholder="https://images.unsplash.com/..." value="<%= property.img_url || '' %>"
+                       class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+            </div>
+
+            <div>
+                <label for="status" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Status</label>
+                <select id="status" name="status" required
+                        class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                    <option value="Active" <%= property.status === 'Active' ? 'selected' : '' %>>Active</option>
+                    <option value="Inactive" <%= property.status === 'Inactive' ? 'selected' : '' %>>Inactive</option>
+                </select>
+            </div>
+
+            <div class="pt-4 border-t border-[#1F1F1F] flex justify-end gap-3">
+                <a href="/properties/<%= property.id %>" class="px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-zinc-400 hover:text-white border border-[#262626] text-xs font-semibold rounded-md transition-all">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-md transition-all">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    const areas = <%- JSON.stringify(areas) %>;
+    const initialAreaId = "<%= property.area_id %>";
+
+    function filterAreasByCity(cityId, selectDefault = null) {
+        const areaSelect = document.getElementById('area_select');
+        areaSelect.innerHTML = '<option value="">-- Choose Area --</option>';
+        
+        if (!cityId) return;
+        
+        const filteredAreas = areas.filter(a => a.city_id === cityId);
+        filteredAreas.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.id;
+            opt.textContent = a.name;
+            if (selectDefault && selectDefault === a.id) {
+                opt.selected = true;
+            }
+            areaSelect.appendChild(opt);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const cityId = document.getElementById('city_select').value;
+        filterAreasByCity(cityId, initialAreaId);
+    });
+</script>
+
+<%- include('../partials/footer') %>

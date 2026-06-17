@@ -1,0 +1,96 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Tenants &gt; <span class="text-zinc-200">Register Tenant Profile</span></div>
+        <a href="/tenants" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Back to list</a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto max-w-2xl space-y-6">
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">Register New Tenant</h1>
+            <p class="text-zinc-500 text-xs mt-1">Add details, contact nodes, CNIC indexes, and emergency contacts to manage renting properties.</p>
+        </div>
+
+        <form action="/tenants/add" method="POST" class="bg-[#111111] border border-[#262626] p-6 rounded-xl space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="name" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Full Name</label>
+                    <input type="text" id="name" name="name" required placeholder="e.g. Arshad Khan"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+
+                <div>
+                    <label for="father_name" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Father's Name</label>
+                    <input type="text" id="father_name" name="father_name" required placeholder="e.g. Zaman Khan"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="cnic" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">CNIC Card Number (Pakistan format)</label>
+                    <input type="text" id="cnic" name="cnic" required placeholder="e.g. 17301-1234567-9"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+
+                <div>
+                    <label for="phone" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Mobile Phone (Primary)</label>
+                    <input type="text" id="phone" name="phone" required placeholder="e.g. 0333-1234567"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="emergency_contact" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Emergency Contact Details</label>
+                    <input type="text" id="emergency_contact" name="emergency_contact" required placeholder="e.g. Brother: 0332-1112223"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+
+                <div>
+                    <label for="address" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Permanent Residential Address</label>
+                    <input type="text" id="address" name="address" required placeholder="e.g. Street 5, Phase 2, Hayatabad, Peshawar"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-650 focus:outline-none focus:border-blue-500/80 transition-all">
+                </div>
+            </div>
+
+            <div class="p-4 bg-zinc-950 rounded-lg border border-zinc-900 space-y-4">
+                <h3 class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Optional Document Attachment Links</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="cnic_front_url" class="block text-[10px] font-semibold text-zinc-600 mb-1">CNIC Front Image URL (Optional)</label>
+                        <input type="url" id="cnic_front_url" name="cnic_front_url" placeholder="https://example.com/cnic-front.jpg"
+                               class="w-full px-3 py-1.5 bg-[#111111] border border-[#262626] rounded text-white text-xs placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                    <div>
+                        <label for="cnic_back_url" class="block text-[10px] font-semibold text-zinc-600 mb-1">CNIC Back Image URL (Optional)</label>
+                        <input type="url" id="cnic_back_url" name="cnic_back_url" placeholder="https://example.com/cnic-back.jpg"
+                               class="w-full px-3 py-1.5 bg-[#111111] border border-[#262626] rounded text-white text-xs placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
+                    </div>
+                </div>
+                <div class="text-[10px] text-zinc-650 italic">Files and images are completely optional in form submission. Leaving blank won't prevent registration.</div>
+            </div>
+
+            <div>
+                <label for="notes" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Add notes or workspace references</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Add custom notes about references, business type of tenant, advance agreement terms..."
+                          class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all"></textarea>
+            </div>
+
+            <div class="pt-4 border-t border-[#1F1F1F] flex justify-end gap-3">
+                <button type="button" onclick="history.back()" class="px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-zinc-400 hover:text-white border border-[#262626] text-xs font-semibold rounded-md transition-all">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-md transition-all">
+                    Add Tenant Profile
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>
