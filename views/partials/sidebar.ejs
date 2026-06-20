@@ -1,8 +1,8 @@
-<% const activeClass = "group relative flex items-center gap-3 px-3.5 py-3 bg-blue-600/10 text-white rounded-xl text-sm font-semibold border border-blue-500/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-all"; %>
-<% const inactiveClass = "group relative flex items-center gap-3 px-3.5 py-3 text-slate-400 hover:text-white hover:bg-white/[0.04] rounded-xl text-sm font-medium border border-transparent hover:border-white/10 transition-all"; %>
+<% const activeClass = "group relative flex items-center gap-3 px-3 py-3 rounded-2xl bg-blue-600/15 text-white border border-blue-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all"; %>
+<% const inactiveClass = "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-slate-400 hover:text-white hover:bg-white/[0.055] border border-transparent hover:border-white/10 transition-all"; %>
 
 <!-- Mobile Top Navigation Bar -->
-<div class="md:hidden h-16 border-b border-slate-800 bg-[#07090D] flex items-center justify-between px-5 shrink-0 z-40">
+<div class="md:hidden h-16 border-b border-slate-800 bg-[#070A10] flex items-center justify-between px-5 shrink-0 z-40">
     <button id="mobile-hamburger" class="text-white focus:outline-none p-2 hover:bg-white/5 rounded-xl transition-colors" aria-label="Toggle Sidebar Menu">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -10,7 +10,7 @@
     </button>
 
     <div class="text-white text-sm font-black tracking-tight select-none flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-blue-600/15 border border-blue-500/25 flex items-center justify-center text-blue-300 text-xs font-black">
+        <div class="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-300 text-xs font-black">
             PK
         </div>
         PK RENTALS
@@ -22,14 +22,14 @@
 <!-- Mobile backdrop overlay -->
 <div id="sidebar-overlay" class="fixed inset-0 bg-black/70 hidden z-40 transition-opacity duration-300 backdrop-blur-sm md:hidden"></div>
 
-<!-- Advanced Sidebar -->
-<aside id="sidebar-container" class="w-72 border-r border-slate-800 bg-[#07090D] flex flex-col h-full shrink-0 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:transform max-md:-translate-x-full transition-all duration-300 ease-in-out">
+<!-- Premium Sidebar -->
+<aside id="sidebar-container" class="w-72 border-r border-slate-800 bg-[#070A10] flex flex-col h-full shrink-0 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:transform max-md:-translate-x-full transition-all duration-300 ease-in-out">
 
     <!-- Brand Header -->
-    <div class="p-5 border-b border-slate-800 shrink-0">
+    <div class="p-5 border-b border-slate-800 shrink-0 bg-gradient-to-b from-blue-950/20 to-transparent">
         <div class="flex items-center justify-between">
             <a href="/" class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-2xl bg-blue-600/15 border border-blue-500/25 flex items-center justify-center text-blue-300 font-black shadow-lg shadow-blue-950/20">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/30 flex items-center justify-center text-white font-black shadow-lg shadow-blue-950/30">
                     PK
                 </div>
 
@@ -37,13 +37,13 @@
                     <div class="text-white text-base font-black tracking-tight leading-none">
                         PK RENTALS
                     </div>
-                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.16em] mt-1.5">
+                    <div class="text-[10px] text-blue-300/70 font-black uppercase tracking-[0.18em] mt-1.5">
                         Admin Console
                     </div>
                 </div>
             </a>
 
-            <button id="theme-toggle" class="w-9 h-9 rounded-xl bg-white/[0.035] hover:bg-white/[0.07] border border-white/10 text-slate-400 hover:text-white transition-all focus:outline-none flex items-center justify-center" title="Toggle Theme">
+            <button id="theme-toggle" class="w-10 h-10 rounded-2xl bg-white/[0.045] hover:bg-white/[0.08] border border-white/10 text-slate-400 hover:text-white transition-all focus:outline-none flex items-center justify-center" title="Toggle Theme">
                 <svg id="theme-icon-sun" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"></circle>
                     <path stroke-linecap="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
@@ -58,28 +58,29 @@
 
     <!-- Navigation -->
     <nav class="flex-1 px-4 py-5 space-y-1.5 overflow-y-auto">
-        <div class="px-3 pb-2 text-[10px] font-black text-slate-500 tracking-[0.18em] uppercase">
+
+        <div class="px-3 pb-2 text-[10px] font-black text-slate-500 tracking-[0.20em] uppercase">
             Main Controls
         </div>
 
         <% if (typeof can === 'function' && can('view_dashboard')) { %>
             <a href="/dashboard" class="<%= typeof activeTab !== 'undefined' && activeTab === 'dashboard' ? activeClass : inactiveClass %>" id="nav-dashboard">
-                <span class="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center text-blue-300 text-xs shrink-0">⌂</span>
-                <span>Dashboard</span>
+                <span class="w-9 h-9 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-300 text-xs shrink-0">⌂</span>
+                <span class="text-sm font-bold">Dashboard</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_smart_entry')) { %>
             <a href="/smart-entry" class="<%= typeof activeTab !== 'undefined' && activeTab === 'smart-entry' ? activeClass : inactiveClass %>" id="nav-smart-entry">
-                <span class="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center text-amber-300 text-xs shrink-0">⚡</span>
-                <span class="text-blue-300 font-bold">Smart Entry</span>
+                <span class="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-300 text-xs shrink-0">⚡</span>
+                <span class="text-sm font-bold text-blue-300">Smart Entry</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_users')) { %>
             <a href="/users" class="<%= typeof activeTab !== 'undefined' && activeTab === 'users' ? activeClass : inactiveClass %>" id="nav-users">
-                <span class="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center text-indigo-300 text-xs shrink-0">👥</span>
-                <span>Users &amp; Access</span>
+                <span class="w-9 h-9 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-300 text-xs shrink-0">👥</span>
+                <span class="text-sm font-bold">Users &amp; Access</span>
             </a>
         <% } %>
 
@@ -89,36 +90,36 @@
             (typeof can === 'function' && can('view_properties')) ||
             (typeof can === 'function' && can('view_units'))
         ) { %>
-            <div class="px-3 pt-6 pb-2 text-[10px] font-black text-slate-500 tracking-[0.18em] uppercase">
+            <div class="px-3 pt-6 pb-2 text-[10px] font-black text-slate-500 tracking-[0.20em] uppercase">
                 Property Setup
             </div>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_cities')) { %>
             <a href="/cities" class="<%= typeof activeTab !== 'undefined' && activeTab === 'cities' ? activeClass : inactiveClass %>" id="nav-cities">
-                <span class="w-8 h-8 rounded-xl bg-cyan-500/10 border border-cyan-500/15 flex items-center justify-center text-cyan-300 text-xs shrink-0">🏙</span>
-                <span>Cities</span>
+                <span class="w-9 h-9 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-300 text-xs shrink-0">🏙</span>
+                <span class="text-sm font-bold">Cities</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_areas')) { %>
             <a href="/areas" class="<%= typeof activeTab !== 'undefined' && activeTab === 'areas' ? activeClass : inactiveClass %>" id="nav-areas">
-                <span class="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/15 flex items-center justify-center text-sky-300 text-xs shrink-0">📍</span>
-                <span>Areas</span>
+                <span class="w-9 h-9 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-300 text-xs shrink-0">📍</span>
+                <span class="text-sm font-bold">Areas</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_properties')) { %>
             <a href="/properties" class="<%= typeof activeTab !== 'undefined' && activeTab === 'properties' ? activeClass : inactiveClass %>" id="nav-properties">
-                <span class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/15 flex items-center justify-center text-emerald-300 text-xs shrink-0">▦</span>
-                <span>Properties</span>
+                <span class="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-300 text-xs shrink-0">▦</span>
+                <span class="text-sm font-bold">Properties</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_units')) { %>
             <a href="/units" class="<%= typeof activeTab !== 'undefined' && activeTab === 'units' ? activeClass : inactiveClass %>" id="nav-units">
-                <span class="w-8 h-8 rounded-xl bg-violet-500/10 border border-violet-500/15 flex items-center justify-center text-violet-300 text-xs shrink-0">▣</span>
-                <span>Units &amp; Floors</span>
+                <span class="w-9 h-9 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 text-xs shrink-0">▣</span>
+                <span class="text-sm font-bold">Units &amp; Floors</span>
             </a>
         <% } %>
 
@@ -128,36 +129,36 @@
             (typeof can === 'function' && can('view_rent')) ||
             (typeof can === 'function' && can('view_advance'))
         ) { %>
-            <div class="px-3 pt-6 pb-2 text-[10px] font-black text-slate-500 tracking-[0.18em] uppercase">
+            <div class="px-3 pt-6 pb-2 text-[10px] font-black text-slate-500 tracking-[0.20em] uppercase">
                 Management
             </div>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_tenants')) { %>
             <a href="/tenants" class="<%= typeof activeTab !== 'undefined' && activeTab === 'tenants' ? activeClass : inactiveClass %>" id="nav-tenants">
-                <span class="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/15 flex items-center justify-center text-teal-300 text-xs shrink-0">👤</span>
-                <span>Tenants Profiles</span>
+                <span class="w-9 h-9 rounded-2xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-300 text-xs shrink-0">👤</span>
+                <span class="text-sm font-bold">Tenants Profiles</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_agreements')) { %>
             <a href="/agreements" class="<%= typeof activeTab !== 'undefined' && activeTab === 'agreements' ? activeClass : inactiveClass %>" id="nav-agreements">
-                <span class="w-8 h-8 rounded-xl bg-orange-500/10 border border-orange-500/15 flex items-center justify-center text-orange-300 text-xs shrink-0">▤</span>
-                <span>Rent Agreements</span>
+                <span class="w-9 h-9 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-300 text-xs shrink-0">▤</span>
+                <span class="text-sm font-bold">Rent Agreements</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_rent')) { %>
             <a href="/rent" class="<%= typeof activeTab !== 'undefined' && activeTab === 'rent' ? activeClass : inactiveClass %>" id="nav-rent">
-                <span class="w-8 h-8 rounded-xl bg-green-500/10 border border-green-500/15 flex items-center justify-center text-green-300 text-xs shrink-0">₨</span>
-                <span>Rent Ledger / Collect</span>
+                <span class="w-9 h-9 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-300 text-xs shrink-0">₨</span>
+                <span class="text-sm font-bold">Rent Ledger / Collect</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_advance')) { %>
             <a href="/advance" class="<%= typeof activeTab !== 'undefined' && activeTab === 'advance' ? activeClass : inactiveClass %>" id="nav-advance">
-                <span class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/15 flex items-center justify-center text-purple-300 text-xs shrink-0">A</span>
-                <span>Advances Tracker</span>
+                <span class="w-9 h-9 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-300 text-xs shrink-0">A</span>
+                <span class="text-sm font-bold">Advances Tracker</span>
             </a>
         <% } %>
 
@@ -165,36 +166,36 @@
             (typeof can === 'function' && can('view_reports')) ||
             (typeof can === 'function' && can('view_logs'))
         ) { %>
-            <div class="px-3 pt-6 pb-2 text-[10px] font-black text-slate-500 tracking-[0.18em] uppercase">
+            <div class="px-3 pt-6 pb-2 text-[10px] font-black text-slate-500 tracking-[0.20em] uppercase">
                 Insights
             </div>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_reports')) { %>
             <a href="/reports" class="<%= typeof activeTab !== 'undefined' && activeTab === 'reports' ? activeClass : inactiveClass %>" id="nav-reports">
-                <span class="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/15 flex items-center justify-center text-blue-300 text-xs shrink-0">↗</span>
-                <span>Analytical Reports</span>
+                <span class="w-9 h-9 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-300 text-xs shrink-0">↗</span>
+                <span class="text-sm font-bold">Analytical Reports</span>
             </a>
         <% } %>
 
         <% if (typeof can === 'function' && can('view_logs')) { %>
             <a href="/logs" class="<%= typeof activeTab !== 'undefined' && activeTab === 'logs' ? activeClass : inactiveClass %>" id="nav-logs">
-                <span class="w-8 h-8 rounded-xl bg-slate-500/10 border border-slate-500/15 flex items-center justify-center text-slate-300 text-xs shrink-0">☷</span>
-                <span>Activity Logs</span>
+                <span class="w-9 h-9 rounded-2xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center text-slate-300 text-xs shrink-0">☷</span>
+                <span class="text-sm font-bold">Activity Logs</span>
             </a>
         <% } %>
     </nav>
 
     <!-- Sidebar Footer -->
     <div class="p-4 border-t border-slate-800 bg-[#090C12] shrink-0">
-        <div class="rounded-2xl bg-white/[0.035] border border-white/10 p-3 mb-3">
+        <div class="rounded-3xl bg-white/[0.045] border border-white/10 p-4 mb-3">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 border border-blue-400/30 flex items-center justify-center text-xs text-white font-black select-none shrink-0">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-700 border border-blue-400/30 flex items-center justify-center text-xs text-white font-black select-none shrink-0 shadow-lg shadow-blue-950/30">
                     PK
                 </div>
 
                 <div class="text-xs font-medium overflow-hidden">
-                    <div class="text-white truncate font-bold">
+                    <div class="text-white truncate font-black">
                         <%= (typeof admin !== 'undefined' && admin) ? admin.full_name : 'PK Admin' %>
                     </div>
                     <div class="text-slate-500 font-mono text-[10px] mt-0.5">
@@ -205,63 +206,55 @@
         </div>
 
         <div class="flex gap-2">
-            <a href="/change-password" class="flex-1 text-center py-2 bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white rounded-xl text-[11px] font-bold border border-white/10 transition-colors">
+            <a href="/change-password" class="flex-1 text-center py-2 bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white rounded-2xl text-[11px] font-black border border-white/10 transition-colors">
                 Password
             </a>
 
-            <a href="/logout" class="px-3 py-2 bg-red-500/10 hover:bg-red-500/15 text-red-400 hover:text-red-300 rounded-xl text-[11px] font-bold border border-red-500/20 transition-colors text-center" title="Log Out App">
+            <a href="/logout" class="px-3 py-2 bg-red-500/10 hover:bg-red-500/15 text-red-400 hover:text-red-300 rounded-2xl text-[11px] font-black border border-red-500/20 transition-colors text-center" title="Log Out App">
                 Logout
             </a>
         </div>
     </div>
 </aside>
+
 <!-- Dynamic Layout and Theme Initialization and Toggling Handlers -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // --- MULTIPLE SUBMIT PLOCKS & LOADING SPIN STATE ---
         // --- SAFE FORM SUBMIT LOADING STATE ---
-const forms = document.querySelectorAll('form');
-forms.forEach(form => {
-    form.addEventListener('submit', function(e) {
-        const formActionVal = form.getAttribute('action') || '';
+        const forms = document.querySelectorAll('form');
 
-        // Delete forms are handled by footer delete modal.
-        // Do not disable their buttons here, otherwise cancel/delete can get stuck.
-        if (formActionVal.includes('/delete')) {
-            return;
-        }
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const formActionVal = form.getAttribute('action') || '';
 
-        if (form.dataset.submitting === 'true') {
-            e.preventDefault();
-            return;
-        }
+                if (formActionVal.includes('/delete')) {
+                    return;
+                }
 
-        if (!form.checkValidity()) {
-            return;
-        }
+                if (form.dataset.submitting === 'true') {
+                    e.preventDefault();
+                    return;
+                }
 
-        form.dataset.submitting = 'true';
+                if (!form.checkValidity()) {
+                    return;
+                }
 
-        const submitBtns = form.querySelectorAll('button[type="submit"]');
-        submitBtns.forEach(btn => {
-            btn.dataset.originalHtml = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<span class="inline-flex items-center gap-1.5"><svg class="animate-spin h-3 w-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle><path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...</span>`;
-        });
-    });
-});
-                // If submit handler triggers a confirmation or returns false, cancel
+                form.dataset.submitting = 'true';
+
                 const submitBtns = form.querySelectorAll('button[type="submit"]');
                 submitBtns.forEach(btn => {
-                    // Slight delay to allow HTML5 validation triggers to execute first
-                    setTimeout(() => {
-                        if (form.checkValidity()) {
-                            btn.disabled = true;
-                            const originalHTML = btn.innerHTML;
-                            // Add spinner icon
-                            btn.innerHTML = `<span class="inline-flex items-center gap-1.5"><svg class="animate-spin h-3 w-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle><path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Saving...</span>`;
-                        }
-                    }, 10);
+                    btn.dataset.originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = `
+                        <span class="inline-flex items-center gap-1.5">
+                            <svg class="animate-spin h-3 w-3 text-current" viewBox="0 0 24 24" fill="none">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            Saving...
+                        </span>
+                    `;
                 });
             });
         });
@@ -275,6 +268,7 @@ forms.forEach(form => {
             function showMobileSidebar() {
                 sidebarEl.classList.remove('max-md:-translate-x-full');
                 overlayEl.classList.remove('hidden');
+
                 setTimeout(() => {
                     overlayEl.classList.add('opacity-100');
                 }, 10);
@@ -283,6 +277,7 @@ forms.forEach(form => {
             function hideMobileSidebar() {
                 sidebarEl.classList.add('max-md:-translate-x-full');
                 overlayEl.classList.remove('opacity-100');
+
                 setTimeout(() => {
                     if (sidebarEl.classList.contains('max-md:-translate-x-full')) {
                         overlayEl.classList.add('hidden');
@@ -293,7 +288,6 @@ forms.forEach(form => {
             hamburgerBtn.addEventListener('click', showMobileSidebar);
             overlayEl.addEventListener('click', hideMobileSidebar);
 
-            // Hide sidebar on clicking link in phone views
             const responsiveLinks = sidebarEl.querySelectorAll('nav a');
             responsiveLinks.forEach(link => {
                 link.addEventListener('click', function() {
@@ -304,13 +298,14 @@ forms.forEach(form => {
             });
         }
 
-        // --- LIGHT & DARK THEME INTERVENTIONS ---
+        // --- LIGHT & DARK THEME HANDLERS ---
         const btnToggle = document.getElementById('theme-toggle');
         const iconSun = document.getElementById('theme-icon-sun');
         const iconMoon = document.getElementById('theme-icon-moon');
 
         function syncThemeIcons() {
             const isLightActive = document.documentElement.classList.contains('light');
+
             if (isLightActive) {
                 if (iconSun) iconSun.classList.remove('hidden');
                 if (iconMoon) iconMoon.classList.add('hidden');
@@ -321,11 +316,11 @@ forms.forEach(form => {
         }
 
         if (btnToggle) {
-            // Check initial load matching states
             syncThemeIcons();
 
             btnToggle.addEventListener('click', function() {
                 const targetEl = document.documentElement;
+
                 if (targetEl.classList.contains('light')) {
                     targetEl.classList.remove('light');
                     localStorage.setItem('theme', 'dark');
@@ -333,6 +328,7 @@ forms.forEach(form => {
                     targetEl.classList.add('light');
                     localStorage.setItem('theme', 'light');
                 }
+
                 syncThemeIcons();
             });
         }

@@ -14,6 +14,11 @@
     const advanceReceived = Number(overallStats.advanceReceived || 0);
     const advanceThisMonth = Number(overallStats.advanceThisMonth || 0);
 
+    const totalUnits = Number(overallStats.totalUnits || 0);
+    const rentedUnits = Number(overallStats.rentedUnits || 0);
+    const vacantUnits = Number(overallStats.vacantUnits || 0);
+    const vacancyRate = Number(overallStats.vacancyRate || 0);
+
     const receivedPercent = expected > 0 ? Math.min(100, Math.round((received / expected) * 100)) : 0;
     const pendingPercent = expected > 0 ? Math.min(100, Math.round((pending / expected) * 100)) : 0;
 %>
@@ -52,7 +57,7 @@
             <div class="inline-flex items-center gap-2 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 <span class="text-[11px] text-slate-400 font-mono">
-                    <%= new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %> PKT
+                    <%= new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %> PKT
                 </span>
             </div>
         </div>
@@ -92,12 +97,12 @@
                     <div class="grid grid-cols-2 gap-3 min-w-[260px]">
                         <div class="bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
                             <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Units</div>
-                            <div class="text-2xl text-white font-bold mt-1"><%= overallStats.totalUnits %></div>
+                            <div class="text-2xl text-white font-bold mt-1"><%= totalUnits %></div>
                         </div>
 
                         <div class="bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
                             <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Occupied</div>
-                            <div class="text-2xl text-emerald-400 font-bold mt-1"><%= overallStats.rentedUnits %></div>
+                            <div class="text-2xl text-emerald-400 font-bold mt-1"><%= rentedUnits %></div>
                         </div>
                     </div>
                 </div>
@@ -115,7 +120,7 @@
                 </div>
 
                 <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full bg-emerald-500 rounded-full" style="width: <%= receivedPercent %>%"></div>
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: <%= receivedPercent %>%;"></div>
                 </div>
 
                 <div class="flex justify-between text-[11px] text-slate-500 mt-3 font-mono">
@@ -170,9 +175,9 @@
                     <div class="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Vacancy Ratio</div>
                     <div class="w-10 h-10 rounded-2xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center text-slate-300 text-sm font-bold">%</div>
                 </div>
-                <div class="text-3xl font-bold text-white mt-4 tracking-tight"><%= overallStats.vacancyRate.toFixed(1) %>%</div>
+                <div class="text-3xl font-bold text-white mt-4 tracking-tight"><%= vacancyRate.toFixed(1) %>%</div>
                 <div class="text-[11px] text-slate-500 mt-3 font-mono">
-                    <%= overallStats.vacantUnits %> vacant / <%= overallStats.totalUnits %> total units
+                    <%= vacantUnits %> vacant / <%= totalUnits %> total units
                 </div>
             </div>
         </section>
@@ -208,36 +213,36 @@
                                         </div>
 
                                         <span class="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] uppercase tracking-wider font-bold rounded-lg">
-                                            <%= city.propertyCount %> Properties
+                                            <%= Number(city.propertyCount || 0) %> Properties
                                         </span>
                                     </div>
 
                                     <div class="grid grid-cols-2 gap-3">
                                         <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
                                             <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Total Units</div>
-                                            <div class="text-white text-lg font-bold mt-1"><%= city.unitCount %></div>
+                                            <div class="text-white text-lg font-bold mt-1"><%= Number(city.unitCount || 0) %></div>
                                         </div>
 
                                         <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
                                             <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Rented</div>
-                                            <div class="text-emerald-400 text-lg font-bold mt-1"><%= city.rentedCount %></div>
+                                            <div class="text-emerald-400 text-lg font-bold mt-1"><%= Number(city.rentedCount || 0) %></div>
                                         </div>
 
                                         <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
                                             <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Vacant</div>
-                                            <div class="text-red-400 text-lg font-bold mt-1"><%= city.vacantCount %></div>
+                                            <div class="text-red-400 text-lg font-bold mt-1"><%= Number(city.vacantCount || 0) %></div>
                                         </div>
 
                                         <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
                                             <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Expected</div>
-                                            <div class="text-slate-200 text-lg font-bold mt-1">₨ <%= (city.expectedRent / 1000).toFixed(0) %>k</div>
+                                            <div class="text-slate-200 text-lg font-bold mt-1">₨ <%= (Number(city.expectedRent || 0) / 1000).toFixed(0) %>k</div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="px-5 py-4 border-t border-slate-800 bg-[#10141D] flex justify-between items-center">
                                     <span class="text-slate-500 text-xs font-semibold">Cash Collection</span>
-                                    <span class="text-white text-sm font-bold font-mono">₨ <%= city.receivedRent.toLocaleString() %></span>
+                                    <span class="text-white text-sm font-bold font-mono">₨ <%= Number(city.receivedRent || 0).toLocaleString() %></span>
                                 </div>
                             </div>
                         <% }); %>
@@ -245,6 +250,7 @@
                 <% } else { %>
                     <div class="p-10 text-center text-slate-500 text-sm">
                         <p>No cities available. Add your first city to begin portfolio operations.</p>
+
                         <% if (canAddCities) { %>
                             <a href="/cities/add" class="inline-flex mt-4 px-4 py-2 bg-white text-black rounded-xl text-xs font-bold hover:bg-slate-200">
                                 Add City
@@ -255,7 +261,7 @@
             </div>
         </section>
 
-        <!-- Logs -->
+        <!-- Recent Activity Logs -->
         <section class="bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between gap-3">
                 <div>
@@ -280,8 +286,9 @@
                                 </span>
                                 <span class="text-slate-300 text-xs leading-relaxed"><%= log.details %></span>
                             </div>
+
                             <span class="text-slate-500 text-[11px] font-mono shrink-0">
-                                <%= new Date(log.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %>
+                                <%= new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
                             </span>
                         </div>
                     <% }); %>
