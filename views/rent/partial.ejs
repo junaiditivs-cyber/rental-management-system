@@ -1,0 +1,147 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">
+            Rent Ledger &gt; <span class="text-zinc-200">Receive Later Partial Payment</span>
+        </div>
+        <a href="/rent" class="text-xs text-zinc-400 hover:text-white transition-colors">&larr; Back to Rent Ledger</a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto max-w-2xl space-y-6">
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">Receive Remaining / Later Partial Payment</h1>
+            <p class="text-zinc-500 text-xs mt-1">
+                Use this when a tenant paid partial rent first and remaining amount is received later in the same month.
+            </p>
+        </div>
+
+        <% if (locals.error_msg) { %>
+            <div class="p-4 bg-red-950/30 border border-red-500/20 text-red-400 text-xs rounded-xl flex items-center justify-between shadow-md">
+                <div class="flex items-center gap-2">
+                    <span>⚠️</span>
+                    <span><%= error_msg %></span>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-red-500 font-bold">&times;</button>
+            </div>
+        <% } %>
+
+        <form action="/rent/<%= payment.id %>/partial" method="POST" class="bg-[#111111] border border-[#262626] p-6 rounded-xl space-y-5">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Tenant</label>
+                    <input type="text" readonly value="<%= tenant ? tenant.name : 'Unknown' %>"
+                           class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-zinc-400 text-sm cursor-not-allowed">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Unit / Shop</label>
+                    <input type="text" readonly value="<%= unit ? unit.name : 'Unknown' %>"
+                           class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-zinc-400 text-sm cursor-not-allowed">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-[#1F1F1F] pt-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Monthly Rent</label>
+                    <input type="text" readonly value="Rs <%= Number(payment.total_rent || 0).toLocaleString() %>"
+                           class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-zinc-400 text-sm cursor-not-allowed font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Already Paid</label>
+                    <input type="text" readonly value="Rs <%= Number(payment.paid_amount || 0).toLocaleString() %>"
+                           class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-emerald-400 text-sm cursor-not-allowed font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-semibold text-amber-400 uppercase tracking-wider mb-1.5">Pending Balance</label>
+                    <input type="number" id="pending_balance" readonly value="<%= Number(payment.pending_amount || 0) %>"
+                           class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-amber-400 text-sm cursor-not-allowed font-mono">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-[#1F1F1F] pt-4">
+                <div>
+                    <label for="received_amount" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                        Amount Received Now
+                    </label>
+                    <input type="number" id="received_amount" name="received_amount" required min="1" max="<%= Number(payment.pending_amount || 0) %>" placeholder="Enter received amount"
+                           oninput="calculateNewBalance()"
+                           class="w-full px-3 py-2 bg-[#161616] border border-blue-500/30 rounded-md text-white text-sm focus:outline-none focus:border-blue-500 font-mono">
+                    <span class="text-[10px] text-zinc-500 mt-1 block">
+                        Maximum pending amount: Rs <%= Number(payment.pending_amount || 0).toLocaleString() %>
+                    </span>
+                </div>
+
+                <div>
+                    <label for="new_pending" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                        New Pending Balance
+                    </label>
+                    <input type="number" id="new_pending" readonly value="<%= Number(payment.pending_amount || 0) %>"
+                           class="w-full px-3 py-2 bg-zinc-950 border border-zinc-900 rounded-md text-red-400 text-sm cursor-not-allowed font-mono">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="payment_method" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Payment Method</label>
+                    <select id="payment_method" name="payment_method" required
+                            class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank">Bank Deposit / IBFT</option>
+                        <option value="EasyPaisa">EasyPaisa</option>
+                        <option value="JazzCash">JazzCash</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="payment_date" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Received Date</label>
+                    <input type="date" id="payment_date" name="payment_date" required value="<%= new Date().toISOString().split('T')[0] %>"
+                           class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none font-mono">
+                </div>
+            </div>
+
+            <div>
+                <label for="payment_proof_url" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                    Receipt / Proof Link Optional
+                </label>
+                <input type="url" id="payment_proof_url" name="payment_proof_url" placeholder="https://example.com/receipt.jpg"
+                       class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
+            </div>
+
+            <div>
+                <label for="notes" class="block text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">
+                    Notes Optional
+                </label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Example: Remaining amount received 10 days later..."
+                          class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all"></textarea>
+            </div>
+
+            <div class="pt-4 border-t border-[#1F1F1F] flex justify-end gap-3">
+                <a href="/rent" class="px-4 py-2 bg-[#1A1A1A] hover:bg-[#2A2A2A] text-zinc-400 hover:text-white border border-[#262626] text-xs font-semibold rounded-md transition-all">
+                    Cancel
+                </a>
+
+                <button type="submit" class="px-4 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-md transition-all">
+                    Receive Payment
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script>
+    function calculateNewBalance() {
+        const pending = parseInt(document.getElementById('pending_balance').value || '0', 10);
+        const received = parseInt(document.getElementById('received_amount').value || '0', 10);
+        const newPending = Math.max(0, pending - received);
+
+        document.getElementById('new_pending').value = newPending;
+    }
+</script>
+
+<%- include('../partials/footer') %>

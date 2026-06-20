@@ -37,9 +37,10 @@ type AppDb = {
   rent_payments: AnyRow[];
   advance_payments: AnyRow[];
   advance_adjustments: AnyRow[];
+  user_property_assignments: AnyRow[];
+  user_permissions: AnyRow[];
   activity_logs: AnyRow[];
 };
-
 const nowIso = () => new Date().toISOString();
 const todayDate = () => new Date().toISOString().split('T')[0];
 const toNumber = (value: any, fallback = 0) => {
@@ -68,9 +69,11 @@ async function loadDb(): Promise<AppDb> {
     tenants,
     rent_agreements,
     rent_payments,
-    advance_payments,
+       advance_payments,
     advance_adjustments,
-    activity_logs
+    user_property_assignments,
+user_permissions,
+activity_logs
   ] = await Promise.all([
     selectAll('admin_users'),
     selectAll('cities'),
@@ -83,23 +86,27 @@ async function loadDb(): Promise<AppDb> {
     selectAll('rent_payments'),
     selectAll('advance_payments'),
     selectAll('advance_adjustments'),
+    selectAll('user_property_assignments'),
+    selectAll('user_permissions'),
     selectAll('activity_logs')
   ]);
 
   return {
-    admin_users,
-    cities,
-    areas,
-    properties,
-    floors,
-    units,
-    tenants,
-    rent_agreements,
-    rent_payments,
-    advance_payments,
-    advance_adjustments,
-    activity_logs
-  };
+  admin_users,
+  cities,
+  areas,
+  properties,
+  floors,
+  units,
+  tenants,
+  rent_agreements,
+  rent_payments,
+  advance_payments,
+  advance_adjustments,
+  user_property_assignments,
+  user_permissions,
+  activity_logs
+};
 }
 
 async function insertOne(table: string, payload: AnyRow) {
@@ -118,10 +125,229 @@ async function deleteById(table: string, id: string) {
   const { error } = await supabase.from(table).delete().eq('id', id);
   if (error) throw error;
 }
-
 async function logActivity(action: string, details: string) {
   const { error } = await supabase.from('activity_logs').insert({ action, details });
   if (error) console.error('Activity log error:', error.message);
+} 
+const PERMISSION_GROUPS = [
+  {
+    title: 'Dashboard',
+    permissions: [
+      { key: 'view_dashboard', label: 'Dashboard View' }
+    ]
+  },
+  {
+    title: 'Smart Entry',
+    permissions: [
+      { key: 'view_smart_entry', label: 'Smart Entry View' },
+      { key: 'add_smart_entry', label: 'Smart Entry Add' }
+    ]
+  },
+  {
+    title: 'Cities',
+    permissions: [
+      { key: 'view_cities', label: 'Cities View' },
+      { key: 'add_cities', label: 'Cities Add' },
+      { key: 'edit_cities', label: 'Cities Edit' },
+      { key: 'delete_cities', label: 'Cities Delete' }
+    ]
+  },
+  {
+    title: 'Areas',
+    permissions: [
+      { key: 'view_areas', label: 'Areas View' },
+      { key: 'add_areas', label: 'Areas Add' },
+      { key: 'edit_areas', label: 'Areas Edit' },
+      { key: 'delete_areas', label: 'Areas Delete' }
+    ]
+  },
+  {
+    title: 'Properties',
+    permissions: [
+      { key: 'view_properties', label: 'Properties View' },
+      { key: 'add_properties', label: 'Properties Add' },
+      { key: 'edit_properties', label: 'Properties Edit' },
+      { key: 'delete_properties', label: 'Properties Delete' }
+    ]
+  },
+  {
+    title: 'Floors',
+    permissions: [
+      { key: 'add_floors', label: 'Floors Add' },
+      { key: 'delete_floors', label: 'Floors Delete' }
+    ]
+  },
+  {
+    title: 'Units',
+    permissions: [
+      { key: 'view_units', label: 'Units View' },
+      { key: 'add_units', label: 'Units Add' },
+      { key: 'edit_units', label: 'Units Edit' },
+      { key: 'delete_units', label: 'Units Delete' }
+    ]
+  },
+  {
+    title: 'Tenants',
+    permissions: [
+      { key: 'view_tenants', label: 'Tenants View' },
+      { key: 'add_tenants', label: 'Tenants Add' },
+      { key: 'edit_tenants', label: 'Tenants Edit' },
+      { key: 'delete_tenants', label: 'Tenants Delete' }
+    ]
+  },
+  {
+    title: 'Agreements',
+    permissions: [
+      { key: 'view_agreements', label: 'Agreements View' },
+      { key: 'add_agreements', label: 'Agreements Add' },
+      { key: 'edit_agreements', label: 'Agreements Edit' },
+      { key: 'delete_agreements', label: 'Agreements Delete' },
+      { key: 'end_agreements', label: 'Agreements End' }
+    ]
+  },
+  {
+    title: 'Rent',
+    permissions: [
+      { key: 'view_rent', label: 'Rent View' },
+      { key: 'collect_rent', label: 'Rent Collect' },
+      { key: 'edit_rent', label: 'Rent Edit' },
+      { key: 'delete_rent', label: 'Rent Delete' }
+    ]
+  },
+  {
+    title: 'Advance',
+    permissions: [
+      { key: 'view_advance', label: 'Advance View' },
+      { key: 'add_advance', label: 'Advance Add' },
+      { key: 'edit_advance', label: 'Advance Edit' },
+      { key: 'delete_advance', label: 'Advance Delete' }
+    ]
+  },
+  {
+    title: 'Reports & Logs',
+    permissions: [
+      { key: 'view_reports', label: 'Reports View' },
+      { key: 'view_logs', label: 'Activity Logs View' }
+    ]
+  },
+  {
+    title: 'Users & Access',
+    permissions: [
+      { key: 'view_users', label: 'Users View' },
+      { key: 'create_users', label: 'Users Create' },
+      { key: 'edit_users', label: 'Users Edit' },
+      { key: 'delete_users', label: 'Users Delete' },
+      { key: 'assign_user_access', label: 'Users Assign Access' }
+    ]
+  }
+];
+
+function isSuperAdmin(admin: any) {
+  return String(admin?.role || '').toLowerCase() === 'super admin';
+}
+
+function filterDbForAdmin(db: AppDb, admin: any): AppDb {
+  if (isSuperAdmin(admin)) {
+    return db;
+  }
+
+  const assignedPropertyIds = new Set(
+    db.user_property_assignments
+      .filter(a => a.user_id === admin?.id)
+      .map(a => a.property_id)
+  );
+
+  const properties = db.properties.filter(p => assignedPropertyIds.has(p.id));
+  const propertyIds = new Set(properties.map(p => p.id));
+
+  const floors = db.floors.filter(f => propertyIds.has(f.property_id));
+  const units = db.units.filter(u => propertyIds.has(u.property_id));
+  const unitIds = new Set(units.map(u => u.id));
+
+  const rent_agreements = db.rent_agreements.filter(ag => unitIds.has(ag.unit_id));
+  const agreementIds = new Set(rent_agreements.map(ag => ag.id));
+
+  const rent_payments = db.rent_payments.filter(
+    p => unitIds.has(p.unit_id) || agreementIds.has(p.agreement_id)
+  );
+
+  const advance_payments = db.advance_payments.filter(
+    a => unitIds.has(a.unit_id) || agreementIds.has(a.agreement_id)
+  );
+
+  const advancePaymentIds = new Set(advance_payments.map(a => a.id));
+
+  const advance_adjustments = db.advance_adjustments.filter(
+    a =>
+      unitIds.has(a.unit_id) ||
+      agreementIds.has(a.agreement_id) ||
+      advancePaymentIds.has(a.advance_payment_id)
+  );
+
+  const tenantIds = new Set([
+    ...rent_agreements.map(ag => ag.tenant_id),
+    ...rent_payments.map(p => p.tenant_id),
+    ...advance_payments.map(a => a.tenant_id)
+  ].filter(Boolean));
+
+  const tenants = db.tenants.filter(t => tenantIds.has(t.id));
+
+  const cityIds = new Set(properties.map(p => p.city_id).filter(Boolean));
+  const areaIds = new Set(properties.map(p => p.area_id).filter(Boolean));
+
+  const cities = db.cities.filter(c => cityIds.has(c.id));
+  const areas = db.areas.filter(a => areaIds.has(a.id));
+return {
+  ...db,
+  cities,
+  areas,
+  properties,
+  floors,
+  units,
+  tenants,
+  rent_agreements,
+  rent_payments,
+  advance_payments,
+  advance_adjustments,
+  user_property_assignments: db.user_property_assignments || [],
+  user_permissions: db.user_permissions || [],
+  activity_logs: []
+};
+}
+
+async function loadScopedDb(req: any): Promise<AppDb> {
+  const db = await loadDb();
+  const admin = (req.session as any)?.admin;
+  return filterDbForAdmin(db, admin);
+}
+
+function requireSuperAdmin(req: any, res: any, next: any) {
+  const admin = (req.session as any)?.admin;
+
+  if (!admin || !isSuperAdmin(admin)) {
+    return res.status(403).send('Forbidden: Super Admin access required.');
+  }
+
+  next();
+}
+function canAccess(req: any, permissionKey: string) {
+  const admin = (req.session as any)?.admin;
+
+  if (!admin) return false;
+  if (isSuperAdmin(admin)) return true;
+
+  const permissions = (req as any).userPermissions || new Set();
+  return permissions.has(permissionKey);
+}
+
+function requirePermission(permissionKey: string) {
+  return (req: any, res: any, next: any) => {
+    if (!canAccess(req, permissionKey)) {
+      return res.status(403).send('Forbidden: You do not have permission to access this action.');
+    }
+
+    next();
+  };
 }
 
 async function ensureDefaultAdmin() {
@@ -131,11 +357,12 @@ async function ensureDefaultAdmin() {
     return;
   }
   if (!data || data.length === 0) {
-    const { error: insertError } = await supabase.from('admin_users').insert({
-      username: 'admin',
-      password_hash: 'admin123',
-      full_name: 'Super Admin'
-    });
+  const { error: insertError } = await supabase.from('admin_users').insert({
+  username: 'admin@gmail.com',
+  password_hash: 'admin123',
+  full_name: 'Super Admin',
+  role: 'Super Admin'
+});
     if (insertError) console.error('Default admin insert error:', insertError.message);
   }
 }
@@ -155,6 +382,54 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production'
   }
 }));
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'pk_rental_secret_9922',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  }
+}));
+
+app.use(asyncHandler(async (req: any, res: any, next: any) => {
+  const admin = (req.session as any)?.admin;
+
+  if (!admin) {
+    (req as any).userPermissions = new Set();
+    res.locals.can = () => false;
+    return next();
+  }
+
+  if (isSuperAdmin(admin)) {
+    (req as any).userPermissions = new Set();
+    res.locals.can = () => true;
+    return next();
+  }
+
+  const { data, error } = await supabase
+    .from('user_permissions')
+    .select('permission_key')
+    .eq('user_id', admin.id)
+    .eq('is_allowed', true);
+
+  if (error) throw error;
+
+  const permissionSet = new Set((data || []).map(p => p.permission_key));
+
+  (req as any).userPermissions = permissionSet;
+
+  res.locals.can = (permissionKey: string) => {
+    return permissionSet.has(permissionKey);
+  };
+
+  next();
+}));
+
+// Set EJS Engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(process.cwd(), 'views'));
 
 // Set EJS Engine
 app.set('view engine', 'ejs');
@@ -164,10 +439,12 @@ app.set('views', path.join(process.cwd(), 'views'));
 function requireAuth(req: any, res: any, next: any) {
   const admin = (req.session as any)?.admin;
   if (!admin) return res.redirect('/login');
+
   res.locals.admin = admin;
+  res.locals.session = req.session;
+
   next();
 }
-
 app.get('/login', (req, res) => {
   if ((req.session as any)?.admin) return res.redirect('/');
   res.render('auth/login', { error_msg: null });
@@ -188,11 +465,11 @@ app.post('/login', asyncHandler(async (req: any, res: any) => {
   // If you later switch to bcrypt, update this comparison.
   if (admin && admin.password_hash === password) {
     (req.session as any).admin = {
-      id: admin.id,
-      username: admin.username,
-      role: 'Super Admin',
-      full_name: admin.full_name || 'Super Admin'
-    };
+  id: admin.id,
+  username: admin.username,
+  role: admin.role || 'User',
+  full_name: admin.full_name || admin.username
+};
     await logActivity('Admin Login', `User ${admin.username} authorized successfully.`);
     req.session.save((err: any) => {
       if (err) console.error('Session save error:', err);
@@ -203,17 +480,490 @@ app.post('/login', asyncHandler(async (req: any, res: any) => {
   }
 }));
 
-app.get('/logout', asyncHandler(async (req: any, res: any) => {
+// -----------------------------------------
+// USER MANAGEMENT AND PROPERTY ASSIGNMENTS
+// -----------------------------------------
+// USER MANAGEMENT AND PROPERTY ASSIGNMENTS
+// -----------------------------------------
+app.get('/users', requireAuth, requirePermission('view_users'), asyncHandler(async (req: any, res: any) => {
+  const db = await loadDb();
+
+  const users = db.admin_users.map(user => {
+    const assignedCount = (db.user_property_assignments || []).filter(a => a.user_id === user.id).length;
+    const permissionCount = (db.user_permissions || []).filter(p => p.user_id === user.id && p.is_allowed).length;
+
+    return {
+      ...user,
+      assignedCount,
+      permissionCount
+    };
+  });
+
+  res.render('users/list', {
+    users,
+    activeTab: 'users',
+    success_msg: req.query.success_msg || null,
+    error_msg: req.query.error_msg || null
+  });
+}));
+
+app.get('/users/add', requireAuth, requirePermission('create_users'), (req: any, res: any) => {
+  res.render('users/add', {
+    activeTab: 'users',
+    error_msg: null
+  });
+});
+
+app.post('/users/add', requireAuth, requirePermission('create_users'), asyncHandler(async (req: any, res: any) => {
+  const currentAdmin = (req.session as any)?.admin;
+  const { full_name, username, password, role } = req.body;
+
+  if (!username || !password) {
+    return res.render('users/add', {
+      activeTab: 'users',
+      error_msg: 'Username and password are required.'
+    });
+  }
+
+  const finalRole = isSuperAdmin(currentAdmin) ? (role || 'User') : 'User';
+
+  const { data: existingUser, error: existingError } = await supabase
+    .from('admin_users')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  if (existingUser) {
+    return res.render('users/add', {
+      activeTab: 'users',
+      error_msg: 'This username already exists.'
+    });
+  }
+
+  await insertOne('admin_users', {
+    full_name: full_name || username,
+    username,
+    password_hash: password,
+    role: finalRole
+  });
+
+  await logActivity('Create User', `Created user account: ${username}`);
+  res.redirect('/users?success_msg=' + encodeURIComponent('User created successfully.'));
+}));
+
+app.get('/users/:id/edit', requireAuth, requirePermission('edit_users'), asyncHandler(async (req: any, res: any) => {
+  const currentAdmin = (req.session as any)?.admin;
+  const db = await loadDb();
+  const user = db.admin_users.find(u => u.id === req.params.id);
+
+  if (!user) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('User not found.'));
+  }
+
+  if (user.role === 'Super Admin' && !isSuperAdmin(currentAdmin)) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('Only Super Admin can edit Super Admin account.'));
+  }
+
+  res.render('users/edit', {
+    user,
+    activeTab: 'users',
+    error_msg: null
+  });
+}));
+
+app.post('/users/:id/edit', requireAuth, requirePermission('edit_users'), asyncHandler(async (req: any, res: any) => {
+  const currentAdmin = (req.session as any)?.admin;
+  const db = await loadDb();
+  const user = db.admin_users.find(u => u.id === req.params.id);
+
+  if (!user) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('User not found.'));
+  }
+
+  if (user.role === 'Super Admin' && !isSuperAdmin(currentAdmin)) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('Only Super Admin can edit Super Admin account.'));
+  }
+
+  const { full_name, username, password, role } = req.body;
+
+  const payload: AnyRow = {
+    full_name: full_name || username,
+    username,
+    role: isSuperAdmin(currentAdmin) ? (role || 'User') : (user.role || 'User')
+  };
+
+  if (password && String(password).trim()) {
+    payload.password_hash = password;
+  }
+
+  await updateById('admin_users', req.params.id, payload);
+  await logActivity('Update User', `Updated user account: ${username}`);
+
+  res.redirect('/users?success_msg=' + encodeURIComponent('User updated successfully.'));
+}));
+
+app.post('/users/:id/delete', requireAuth, requirePermission('delete_users'), asyncHandler(async (req: any, res: any) => {
+  const currentAdmin = (req.session as any)?.admin;
+  const db = await loadDb();
+  const user = db.admin_users.find(u => u.id === req.params.id);
+
+  if (!user) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('User not found.'));
+  }
+
+  if (currentAdmin?.id === req.params.id) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('You cannot delete your own account.'));
+  }
+
+  if (user.role === 'Super Admin') {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('Super Admin account cannot be deleted.'));
+  }
+
+  await supabase.from('user_property_assignments').delete().eq('user_id', req.params.id);
+  await supabase.from('user_permissions').delete().eq('user_id', req.params.id);
+
+  await deleteById('admin_users', req.params.id);
+  await logActivity('Delete User', `Deleted user account: ${user.username}`);
+
+  res.redirect('/users?success_msg=' + encodeURIComponent('User deleted successfully.'));
+}));
+
+app.get('/users/:id/assign', requireAuth, requirePermission('assign_user_access'), asyncHandler(async (req: any, res: any) => {
+  const currentAdmin = (req.session as any)?.admin;
+  const db = await loadDb();
+  const user = db.admin_users.find(u => u.id === req.params.id);
+
+  if (!user) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('User not found.'));
+  }
+
+  if (user.role === 'Super Admin' && !isSuperAdmin(currentAdmin)) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('Only Super Admin can assign access to Super Admin.'));
+  }
+
+  const assignedPropertyIds = (db.user_property_assignments || [])
+    .filter(a => a.user_id === user.id)
+    .map(a => a.property_id);
+
+  const assignedPermissionKeys = (db.user_permissions || [])
+    .filter(p => p.user_id === user.id && p.is_allowed)
+    .map(p => p.permission_key);
+
+  const properties = db.properties.map(property => {
+    const city = db.cities.find(c => c.id === property.city_id);
+    const area = db.areas.find(a => a.id === property.area_id);
+
+    return {
+      ...property,
+      city_name: city ? city.name : 'Unknown City',
+      area_name: area ? area.name : 'Unknown Area',
+      isAssigned: assignedPropertyIds.includes(property.id)
+    };
+  });
+
+  res.render('users/assign', {
+    user,
+    properties,
+    permissionGroups: PERMISSION_GROUPS,
+    assignedPermissionKeys,
+    activeTab: 'users',
+    error_msg: null
+  });
+}));
+
+app.post('/users/:id/assign', requireAuth, requirePermission('assign_user_access'), asyncHandler(async (req: any, res: any) => {
+  const currentAdmin = (req.session as any)?.admin;
+  const userId = req.params.id;
+
+  let propertyIds = req.body.property_ids || [];
+  let permissionKeys = req.body.permission_keys || [];
+
+  if (!Array.isArray(propertyIds)) {
+    propertyIds = [propertyIds];
+  }
+
+  if (!Array.isArray(permissionKeys)) {
+    permissionKeys = [permissionKeys];
+  }
+
+  propertyIds = propertyIds.filter(Boolean);
+  permissionKeys = permissionKeys.filter(Boolean);
+
+  const db = await loadDb();
+  const user = db.admin_users.find(u => u.id === userId);
+
+  if (!user) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('User not found.'));
+  }
+
+  if (user.role === 'Super Admin' && !isSuperAdmin(currentAdmin)) {
+    return res.redirect('/users?error_msg=' + encodeURIComponent('Only Super Admin can assign access to Super Admin.'));
+  }
+
+  await supabase
+    .from('user_property_assignments')
+    .delete()
+    .eq('user_id', userId);
+
+  if (propertyIds.length > 0) {
+    const propertyRows = propertyIds.map((propertyId: string) => ({
+      user_id: userId,
+      property_id: propertyId
+    }));
+
+    const { error: propertyError } = await supabase
+      .from('user_property_assignments')
+      .insert(propertyRows);
+
+    if (propertyError) throw propertyError;
+  }
+
+  await supabase
+    .from('user_permissions')
+    .delete()
+    .eq('user_id', userId);
+
+  if (permissionKeys.length > 0) {
+    const permissionRows = permissionKeys.map((permissionKey: string) => ({
+      user_id: userId,
+      permission_key: permissionKey,
+      is_allowed: true
+    }));
+
+    const { error: permissionError } = await supabase
+      .from('user_permissions')
+      .insert(permissionRows);
+
+    if (permissionError) throw permissionError;
+  }
+
+  await logActivity('Assign User Access', `Updated property and permission access for user: ${user.username}`);
+
+  res.redirect('/users?success_msg=' + encodeURIComponent('User access updated successfully.'));
+}));
+
+// -----------------------------------------
+// CHANGE PASSWORD ROUTES
+// -----------------------------------------
+app.get('/change-password', requireAuth, (req: any, res: any) => {
+  res.render('auth/change-password', {
+    activeTab: 'change-password',
+    error_msg: null,
+    success_msg: null
+  });
+});
+
+app.post('/change-password', requireAuth, asyncHandler(async (req: any, res: any) => {
+  const admin = (req.session as any)?.admin;
+  const { current_password, new_password, confirm_password } = req.body;
+
+  if (!current_password || !new_password || !confirm_password) {
+    return res.render('auth/change-password', {
+      activeTab: 'change-password',
+      error_msg: 'All password fields are required.',
+      success_msg: null
+    });
+  }
+
+  if (String(new_password).length < 6) {
+    return res.render('auth/change-password', {
+      activeTab: 'change-password',
+      error_msg: 'New password must be at least 6 characters.',
+      success_msg: null
+    });
+  }
+
+  if (new_password !== confirm_password) {
+    return res.render('auth/change-password', {
+      activeTab: 'change-password',
+      error_msg: 'New password and confirm password do not match.',
+      success_msg: null
+    });
+  }
+
+  const { data: user, error } = await supabase
+    .from('admin_users')
+    .select('*')
+    .eq('id', admin.id)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!user) {
+    return res.render('auth/change-password', {
+      activeTab: 'change-password',
+      error_msg: 'User account not found.',
+      success_msg: null
+    });
+  }
+
+  if (user.password_hash !== current_password) {
+    return res.render('auth/change-password', {
+      activeTab: 'change-password',
+      error_msg: 'Current password is incorrect.',
+      success_msg: null
+    });
+  }
+
+  await updateById('admin_users', admin.id, {
+    password_hash: new_password
+  });
+
+  await logActivity('Change Password', `User ${admin.username} changed their password.`);
+
+  res.render('auth/change-password', {
+    activeTab: 'change-password',
+    error_msg: null,
+    success_msg: 'Password changed successfully. Please use your new password next time.'
+  });
+}));
+// Logout route
+app.get('/logout', requireAuth, asyncHandler(async (req: any, res: any) => {
   const username = (req.session as any)?.admin?.username;
   if (username) await logActivity('Admin Logout', `User ${username} logged out.`);
   req.session.destroy(() => res.redirect('/login'));
 }));
 
+
+// -----------------------------------------
+// NORMAL USER PAGE / ACTION PERMISSION GUARD
+// -----------------------------------------
+type RoutePermissionRule = {
+  method: string;
+  path: string;
+  permission: string;
+};
+
+const NORMAL_USER_ROUTE_PERMISSIONS: RoutePermissionRule[] = [
+  // Dashboard
+  { method: 'GET', path: '/', permission: 'view_dashboard' },
+  { method: 'GET', path: '/dashboard', permission: 'view_dashboard' },
+
+  // Smart Entry
+  { method: 'GET', path: '/smart-entry', permission: 'view_smart_entry' },
+  { method: 'POST', path: '/smart-entry', permission: 'add_smart_entry' },
+
+  // Cities
+  { method: 'GET', path: '/cities', permission: 'view_cities' },
+  { method: 'GET', path: '/cities/add', permission: 'add_cities' },
+  { method: 'POST', path: '/cities/add', permission: 'add_cities' },
+  { method: 'GET', path: '/cities/:id/edit', permission: 'edit_cities' },
+  { method: 'POST', path: '/cities/:id/edit', permission: 'edit_cities' },
+  { method: 'POST', path: '/cities/:id/delete', permission: 'delete_cities' },
+  { method: 'GET', path: '/cities/:id', permission: 'view_cities' },
+
+  // Areas
+  { method: 'GET', path: '/areas', permission: 'view_areas' },
+  { method: 'GET', path: '/areas/add', permission: 'add_areas' },
+  { method: 'POST', path: '/areas/add', permission: 'add_areas' },
+  { method: 'GET', path: '/areas/:id/edit', permission: 'edit_areas' },
+  { method: 'POST', path: '/areas/:id/edit', permission: 'edit_areas' },
+  { method: 'POST', path: '/areas/:id/delete', permission: 'delete_areas' },
+
+  // Properties
+  { method: 'GET', path: '/properties', permission: 'view_properties' },
+  { method: 'GET', path: '/properties/add', permission: 'add_properties' },
+  { method: 'POST', path: '/properties/add', permission: 'add_properties' },
+  { method: 'GET', path: '/properties/:id/edit', permission: 'edit_properties' },
+  { method: 'POST', path: '/properties/:id/edit', permission: 'edit_properties' },
+  { method: 'POST', path: '/properties/:id/delete', permission: 'delete_properties' },
+  { method: 'GET', path: '/properties/:id', permission: 'view_properties' },
+
+  // Floors
+  { method: 'POST', path: '/floors/add', permission: 'add_floors' },
+  { method: 'POST', path: '/floors/:id/delete', permission: 'delete_floors' },
+
+  // Units
+  { method: 'GET', path: '/units', permission: 'view_units' },
+  { method: 'GET', path: '/units/add', permission: 'add_units' },
+  { method: 'POST', path: '/units/add', permission: 'add_units' },
+  { method: 'GET', path: '/units/:id/edit', permission: 'edit_units' },
+  { method: 'POST', path: '/units/:id/edit', permission: 'edit_units' },
+  { method: 'POST', path: '/units/:id/delete', permission: 'delete_units' },
+  { method: 'GET', path: '/units/:id', permission: 'view_units' },
+
+  // Tenants
+  { method: 'GET', path: '/tenants', permission: 'view_tenants' },
+  { method: 'GET', path: '/tenants/add', permission: 'add_tenants' },
+  { method: 'POST', path: '/tenants/add', permission: 'add_tenants' },
+  { method: 'GET', path: '/tenants/:id/edit', permission: 'edit_tenants' },
+  { method: 'POST', path: '/tenants/:id/edit', permission: 'edit_tenants' },
+  { method: 'POST', path: '/tenants/:id/delete', permission: 'delete_tenants' },
+  { method: 'GET', path: '/tenants/:id', permission: 'view_tenants' },
+
+  // Agreements
+  { method: 'GET', path: '/agreements', permission: 'view_agreements' },
+  { method: 'GET', path: '/agreements/add', permission: 'add_agreements' },
+  { method: 'POST', path: '/agreements/add', permission: 'add_agreements' },
+  { method: 'GET', path: '/agreements/:id/edit', permission: 'edit_agreements' },
+  { method: 'POST', path: '/agreements/:id/edit', permission: 'edit_agreements' },
+  { method: 'GET', path: '/agreements/:id/end', permission: 'end_agreements' },
+  { method: 'POST', path: '/agreements/:id/delete', permission: 'delete_agreements' },
+  { method: 'GET', path: '/agreements/:id', permission: 'view_agreements' },
+
+  // Rent
+  { method: 'GET', path: '/rent', permission: 'view_rent' },
+  { method: 'GET', path: '/rent/collect', permission: 'collect_rent' },
+  { method: 'POST', path: '/rent/collect', permission: 'collect_rent' },
+  { method: 'GET', path: '/rent/:id/partial', permission: 'collect_rent' },
+{ method: 'POST', path: '/rent/:id/partial', permission: 'collect_rent' },
+  { method: 'GET', path: '/rent/:id/edit', permission: 'edit_rent' },
+  { method: 'POST', path: '/rent/:id/edit', permission: 'edit_rent' },
+  { method: 'POST', path: '/rent/:id/delete', permission: 'delete_rent' },
+
+  // Advance
+  { method: 'GET', path: '/advance', permission: 'view_advance' },
+  { method: 'GET', path: '/advance/add', permission: 'add_advance' },
+  { method: 'POST', path: '/advance/add', permission: 'add_advance' },
+  { method: 'GET', path: '/advance/:id/edit', permission: 'edit_advance' },
+  { method: 'POST', path: '/advance/:id/edit', permission: 'edit_advance' },
+  { method: 'POST', path: '/advance/:id/delete', permission: 'delete_advance' },
+
+  // Reports / Logs
+  { method: 'GET', path: '/reports', permission: 'view_reports' },
+  { method: 'GET', path: '/logs', permission: 'view_logs' }
+];
+
+function routeMatches(pattern: string, actualPath: string) {
+  const patternParts = pattern.split('/').filter(Boolean);
+  const actualParts = actualPath.split('/').filter(Boolean);
+
+  if (patternParts.length !== actualParts.length) return false;
+
+  return patternParts.every((part, index) => {
+    return part.startsWith(':') || part === actualParts[index];
+  });
+}
+
+app.use((req: any, res: any, next: any) => {
+  const admin = (req.session as any)?.admin;
+
+  if (!admin) return next();
+
+  // Super Admin always has full access
+  if (isSuperAdmin(admin)) return next();
+
+  const matchedRule = NORMAL_USER_ROUTE_PERMISSIONS.find(rule => {
+    return rule.method === req.method && routeMatches(rule.path, req.path);
+  });
+
+  // If route is not listed here, continue.
+  // Main security routes are listed above.
+  if (!matchedRule) return next();
+
+  if (!canAccess(req, matchedRule.permission)) {
+    return res.status(403).send('Forbidden: You do not have permission to access this page or action.');
+  }
+
+  next();
+});
 // -----------------------------------------
 // DASHBOARD VIEW ROUTE
 // -----------------------------------------
 app.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const db = await loadDb();
+  const db = await loadScopedDb(req);
 
   const d = new Date();
   const currentMonth = d.getMonth() + 1;
@@ -227,17 +977,28 @@ app.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
   const currentMonthPayments = db.rent_payments.filter(p => Number(p.rent_month) === currentMonth && Number(p.rent_year) === currentYear);
   const receivedRent = currentMonthPayments.reduce((sum, p) => sum + toNumber(p.paid_amount), 0);
   const pendingRentArrears = currentMonthPayments.reduce((sum, p) => sum + toNumber(p.pending_amount), 0);
+  const totalAdvanceReceived = db.advance_payments.reduce((sum, a) => sum + toNumber(a.amount), 0);
+
+const currentMonthAdvanceReceived = db.advance_payments
+  .filter(a => {
+    if (!a.received_date) return false;
+    const advanceDate = new Date(a.received_date);
+    return advanceDate.getMonth() + 1 === currentMonth && advanceDate.getFullYear() === currentYear;
+  })
+  .reduce((sum, a) => sum + toNumber(a.amount), 0);
   const vacancyRate = totalUnitsCount > 0 ? (vacantUnitsCount / totalUnitsCount) * 100 : 0;
 
   const overallStats = {
-    expected: expectedMonthlyRent,
-    received: receivedRent,
-    pending: pendingRentArrears,
-    vacancyRate,
-    vacantUnits: vacantUnitsCount,
-    rentedUnits: rentedUnitsCount,
-    totalUnits: totalUnitsCount
-  };
+  expected: expectedMonthlyRent,
+  received: receivedRent,
+  pending: pendingRentArrears,
+  advanceReceived: totalAdvanceReceived,
+  advanceThisMonth: currentMonthAdvanceReceived,
+  vacancyRate,
+  vacantUnits: vacantUnitsCount,
+  rentedUnits: rentedUnitsCount,
+  totalUnits: totalUnitsCount
+};
 
   const citiesData = db.cities.map(city => {
     const cityProperties = db.properties.filter(p => p.city_id === city.id);
@@ -954,6 +1715,75 @@ app.post('/rent/collect', requireAuth, asyncHandler(async (req: any, res: any) =
   res.redirect(`/units/${ag.unit_id}`);
 }));
 
+// Later partial / remaining rent payment
+app.get('/rent/:id/partial', requireAuth, asyncHandler(async (req: any, res: any) => {
+  const db = await loadDb();
+
+  const payment = db.rent_payments.find(p => p.id === req.params.id);
+  if (!payment) {
+    return res.redirect('/rent?error_msg=' + encodeURIComponent('Rent payment record not found.'));
+  }
+
+  const tenant = db.tenants.find(t => t.id === payment.tenant_id);
+  const unit = db.units.find(u => u.id === payment.unit_id);
+
+  res.render('rent/partial', {
+    payment,
+    tenant,
+    unit,
+    error_msg: req.query.error_msg || null
+  });
+}));
+
+app.post('/rent/:id/partial', requireAuth, asyncHandler(async (req: any, res: any) => {
+  const db = await loadDb();
+
+  const payment = db.rent_payments.find(p => p.id === req.params.id);
+  if (!payment) {
+    return res.redirect('/rent?error_msg=' + encodeURIComponent('Rent payment record not found.'));
+  }
+
+  const { received_amount, payment_method, payment_date, payment_proof_url, notes } = req.body;
+
+  const totalRent = toNumber(payment.total_rent);
+  const oldPaid = toNumber(payment.paid_amount);
+  const oldPending = toNumber(payment.pending_amount);
+  const receivedNow = toNumber(received_amount);
+
+  if (receivedNow <= 0) {
+    return res.redirect(`/rent/${payment.id}/partial?error_msg=` + encodeURIComponent('Received amount must be greater than 0.'));
+  }
+
+  if (receivedNow > oldPending) {
+    return res.redirect(`/rent/${payment.id}/partial?error_msg=` + encodeURIComponent('Received amount cannot be greater than pending balance.'));
+  }
+
+  const newPaid = oldPaid + receivedNow;
+  const newPending = Math.max(0, totalRent - newPaid);
+  const newStatus = newPending === 0 ? 'Paid' : 'Partial';
+
+  const oldNotes = payment.notes || '';
+  const laterPaymentNote = `[${payment_date}] Later partial received: Rs ${receivedNow.toLocaleString()} via ${payment_method}.${notes ? ' Note: ' + notes : ''}`;
+
+  await updateById('rent_payments', payment.id, {
+    paid_amount: newPaid,
+    pending_amount: newPending,
+    status: newStatus,
+    payment_date: payment.payment_date,
+    payment_method: payment_method || payment.payment_method,
+    payment_proof_url: payment_proof_url || payment.payment_proof_url || null,
+    notes: oldNotes ? `${oldNotes}\n${laterPaymentNote}` : laterPaymentNote
+  });
+
+  await updateById('units', payment.unit_id, {
+    status: newStatus === 'Paid' ? 'Rented' : 'Pending'
+  });
+
+  await logActivity('Later Partial Rent', `Received later partial rent Rs ${receivedNow.toLocaleString()} for unit ${payment.unit_id}.`);
+
+  res.redirect('/rent?success_msg=' + encodeURIComponent('Later partial payment received and ledger updated successfully.'));
+}));
+
 app.get('/rent/:id/edit', requireAuth, asyncHandler(async (req: any, res: any) => {
   const db = await loadDb();
   const payment = db.rent_payments.find(p => p.id === req.params.id);
@@ -981,7 +1811,7 @@ app.post('/rent/:id/edit', requireAuth, asyncHandler(async (req: any, res: any) 
     pending_amount: pending,
     status: status || payment.status,
     payment_method: payment_method || payment.payment_method,
-    payment_date: payment_date || payment.payment_date,
+    payment_date: payment.payment_date,
     notes: notes || ''
   });
 

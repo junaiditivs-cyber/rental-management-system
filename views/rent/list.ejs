@@ -115,6 +115,11 @@
                                     </div>
                                 </td>
                                 <td class="p-4 text-right font-sans space-x-1.5 whitespace-nowrap shrink-0">
+                                    <% if (Number(p.pending_amount || 0) > 0) { %>
+    <a href="/rent/<%= p.id %>/partial" class="text-xs text-emerald-300 hover:text-emerald-200 bg-emerald-950/30 border border-emerald-700/30 px-2.5 py-1 rounded inline-block font-sans">
+        Receive Balance
+    </a>
+<% } %>
                                     <a href="/rent/<%= p.id %>/edit" class="text-xs text-zinc-300 hover:text-white bg-[#1C1C1E] border border-zinc-800 px-2.5 py-1 rounded inline-block font-sans">
                                         Edit
                                     </a>

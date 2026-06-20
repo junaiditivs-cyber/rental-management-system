@@ -1,169 +1,295 @@
 <%- include('partials/header') %>
 <%- include('partials/sidebar') %>
 
-<!-- Main Panel Content -->
-<main class="flex-1 flex flex-col h-full overflow-hidden">
-    <!-- Header bar -->
-    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
-        <div class="text-sm text-zinc-500">Overview &gt; <span class="text-zinc-200">Main Administrative Dashboard</span></div>
-        <div class="flex items-center gap-4">
-            <a href="/smart-entry" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md shadow-lg transition-all active:scale-[0.98] flex items-center gap-1">
-                <span>⚡ + Smart Entry</span>
-            </a>
-            <a href="/properties/add" class="px-4 py-1.5 bg-[#1C1C1C] border border-[#2E2E2E] text-zinc-300 text-xs font-semibold rounded-md hover:bg-zinc-800 hover:text-white shadow-md transition-all active:scale-[0.98]">
-                + Add Property
-            </a>
-            <div class="w-px h-4 bg-zinc-800"></div>
-            <span class="text-[11px] text-zinc-400 font-mono italic">Time: <%= new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %> PKT</span>
+<%
+    const canViewSmartEntry = typeof can === 'function' && can('view_smart_entry');
+    const canAddProperties = typeof can === 'function' && can('add_properties');
+    const canAddCities = typeof can === 'function' && can('add_cities');
+    const canViewCities = typeof can === 'function' && can('view_cities');
+    const canViewLogs = typeof can === 'function' && can('view_logs');
+
+    const expected = Number(overallStats.expected || 0);
+    const received = Number(overallStats.received || 0);
+    const pending = Number(overallStats.pending || 0);
+    const advanceReceived = Number(overallStats.advanceReceived || 0);
+    const advanceThisMonth = Number(overallStats.advanceThisMonth || 0);
+
+    const receivedPercent = expected > 0 ? Math.min(100, Math.round((received / expected) * 100)) : 0;
+    const pendingPercent = expected > 0 ? Math.min(100, Math.round((pending / expected) * 100)) : 0;
+%>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-[#080A0F]">
+
+    <!-- Header -->
+    <header class="min-h-16 border-b border-slate-800/80 bg-[#0B0E14] px-6 lg:px-8 py-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shrink-0">
+        <div>
+            <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
+                <span>Overview</span>
+                <span class="text-slate-700">/</span>
+                <span class="text-slate-300 font-semibold">Main Administrative Dashboard</span>
+            </div>
+            <h1 class="text-white text-xl font-bold tracking-tight">
+                Rental Portfolio Control Center
+            </h1>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <% if (canViewSmartEntry) { %>
+                <a href="/smart-entry" class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-[0.98]">
+                    <span>⚡</span>
+                    <span>Smart Entry</span>
+                </a>
+            <% } %>
+
+            <% if (canAddProperties) { %>
+                <a href="/properties/add" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all active:scale-[0.98]">
+                    + Add Property
+                </a>
+            <% } %>
+
+            <div class="hidden md:block w-px h-6 bg-slate-800"></div>
+
+            <div class="inline-flex items-center gap-2 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span class="text-[11px] text-slate-400 font-mono">
+                    <%= new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %> PKT
+                </span>
+            </div>
         </div>
     </header>
 
-    <!-- Scrollable main panel container -->
-    <div class="p-8 flex-1 overflow-y-auto space-y-8">
+    <div class="p-5 lg:p-8 flex-1 overflow-y-auto space-y-7">
 
         <% if (locals.success_msg) { %>
-            <div class="p-4 bg-emerald-950/30 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl flex items-center justify-between shadow-md">
+            <div class="p-4 bg-emerald-950/30 border border-emerald-500/20 text-emerald-300 text-xs rounded-2xl flex items-center justify-between shadow-sm">
                 <div class="flex items-center gap-2">
-                    <span class="text-sm">✅</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                     <span><%= success_msg %></span>
                 </div>
                 <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-300 font-bold text-sm">&times;</button>
             </div>
         <% } %>
-        
-        <!-- Welcome Message -->
-        <div class="flex justify-between items-center bg-gradient-to-r from-blue-950/20 to-zinc-950 p-6 rounded-xl border border-blue-900/10">
-            <div>
-                <h1 class="text-white font-bold tracking-tight text-xl">Assalam-o-Alaikum, from JUNAID </h1>
-                <p class="text-zinc-400 text-xs mt-1">Here is the real-time summary of your rental operations across cities of Pakistan.</p>
-            </div>
-            
-        </div>
 
-        <!-- Top Stats Row -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
-                <div class="text-[10px] font-bold text-zinc-500 tracking-wider uppercase mb-1">Total Expected Monthly Rent</div>
-                <div class="text-2xl font-bold text-white tracking-tight">₨ <%= overallStats.expected.toLocaleString() %></div>
-                <div class="text-[10px] text-zinc-500 mt-2 font-mono">Estimated total list rent</div>
-            </div>
-            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
-                <div class="text-[10px] font-bold text-emerald-500/80 tracking-wider uppercase mb-1">Monthly Received Rent</div>
-                <div class="text-2xl font-bold text-emerald-400 tracking-tight">₨ <%= overallStats.received.toLocaleString() %></div>
-                <div class="text-[10px] text-emerald-600 font-mono mt-2 flex items-center gap-1">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    Verified payments received
-                </div>
-            </div>
-            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
-                <div class="text-[10px] font-bold text-amber-500/80 tracking-wider uppercase mb-1">Monthly Outstanding Rent</div>
-                <div class="text-2xl font-bold text-amber-400 tracking-tight">₨ <%= overallStats.pending.toLocaleString() %></div>
-                <div class="text-[10px] text-amber-600 font-mono mt-2 flex items-center gap-1">
-                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                    Arrears and partial residuals
-                </div>
-            </div>
-            <div class="bg-[#111111] border border-[#262626] p-5 rounded-lg flex flex-col justify-between shadow-md">
-                <div class="text-[10px] font-bold text-zinc-500 tracking-wider uppercase mb-1">Vacancy Ratio</div>
-                <div class="text-2xl font-bold text-white tracking-tight"><%= overallStats.vacancyRate.toFixed(1) %>%</div>
-                <div class="text-[10px] text-zinc-500 mt-2 font-mono">
-                    <%= overallStats.vacantUnits %> / <%= overallStats.totalUnits %> Units Vacant
-                </div>
-            </div>
-        </div>
-
-        <!-- Section: City Cards Grid -->
-        <div>
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">Portfolio Cities Summary</h2>
-                <a href="/cities/add" class="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium">
-                    + Add New City
-                </a>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <% if (citiesData && citiesData.length > 0) { %>
-                    <% citiesData.forEach(city => { %>
-                        <!-- Clickable City Card -->
-                        <div class="bg-[#161616] border border-[#262626] rounded-xl overflow-hidden hover:border-blue-500/50 transition-all cursor-pointer group shadow-lg flex flex-col justify-between"
-                             onclick="window.location.href='/cities/<%= city.id %>'">
-                            <div class="p-5">
-                                <div class="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 class="text-white font-semibold text-lg group-hover:text-blue-400 transition-colors"><%= city.name %></h3>
-                                        <p class="text-xs text-zinc-500"><%= city.province %></p>
-                                    </div>
-                                    <span class="px-2 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded uppercase tracking-wider border border-blue-500/10">
-                                        <%= city.propertyCount %> Properties
-                                    </span>
-                                </div>
-                                <div class="grid grid-cols-2 gap-y-4 gap-x-2 border-t border-[#1F1F1F] pt-4">
-                                    <div>
-                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Total Units</div>
-                                        <div class="text-sm font-semibold text-zinc-200"><%= city.unitCount %> Total</div>
-                                    </div>
-                                    <div>
-                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Rented</div>
-                                        <div class="flex gap-1 items-center">
-                                            <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                            <span class="text-xs text-zinc-300 font-medium"><%= city.rentedCount %></span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Vacant</div>
-                                        <div class="flex gap-1 items-center">
-                                            <div class="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                                            <span class="text-xs text-red-400 font-medium"><%= city.vacantCount %> Units</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="text-[9px] text-zinc-500 uppercase font-black tracking-wider">Monthly Rent</div>
-                                        <div class="flex gap-1 items-center">
-                                            <span class="text-xs text-zinc-300 font-mono font-medium">₨ <%= (city.expectedRent / 1000).toFixed(0) %>k</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="bg-[#1F1F1F] px-5 py-3 border-t border-[#262626] flex justify-between items-center text-xs group-hover:bg-[#252528] transition-colors">
-                                <span class="text-zinc-400">Rent Cash Collection</span>
-                                <span class="text-white font-bold font-mono">₨ <%= city.receivedRent.toLocaleString() %></span>
-                            </div>
+        <!-- Executive Summary -->
+        <section class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+            <div class="xl:col-span-8 bg-[#10141D] border border-slate-800 rounded-3xl p-6 shadow-sm">
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                    <div>
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[11px] text-blue-300 font-bold mb-4">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                            Live Business Overview
                         </div>
-                    <% }); %>
+
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white tracking-tight">
+                            Assalam-o-Alaikum, JUNAID
+                        </h2>
+
+                        <p class="text-slate-400 text-sm mt-2 max-w-2xl leading-relaxed">
+                            Real-time overview of rent collection, property occupancy, city performance and recent system activity across your rental portfolio.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 min-w-[260px]">
+                        <div class="bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
+                            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Units</div>
+                            <div class="text-2xl text-white font-bold mt-1"><%= overallStats.totalUnits %></div>
+                        </div>
+
+                        <div class="bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
+                            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Occupied</div>
+                            <div class="text-2xl text-emerald-400 font-bold mt-1"><%= overallStats.rentedUnits %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xl:col-span-4 bg-[#10141D] border border-slate-800 rounded-3xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Collection Health</div>
+                        <div class="text-white text-xl font-bold mt-1"><%= receivedPercent %>% Received</div>
+                    </div>
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold">
+                        %
+                    </div>
+                </div>
+
+                <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div class="h-full bg-emerald-500 rounded-full" style="width: <%= receivedPercent %>%"></div>
+                </div>
+
+                <div class="flex justify-between text-[11px] text-slate-500 mt-3 font-mono">
+                    <span>Received ₨ <%= received.toLocaleString() %></span>
+                    <span>Expected ₨ <%= expected.toLocaleString() %></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- KPI Cards -->
+        <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
+            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-slate-600 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Expected Monthly Rent</div>
+                    <div class="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-bold">₨</div>
+                </div>
+                <div class="text-3xl font-bold text-white mt-4 tracking-tight">₨ <%= expected.toLocaleString() %></div>
+                <div class="text-[11px] text-slate-500 mt-3 font-mono">Total rent scheduled for current month</div>
+            </div>
+
+            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-emerald-700 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10px] font-bold text-emerald-500 tracking-wider uppercase">Received Rent</div>
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm font-bold">✓</div>
+                </div>
+                <div class="text-3xl font-bold text-emerald-400 mt-4 tracking-tight">₨ <%= received.toLocaleString() %></div>
+                <div class="text-[11px] text-emerald-500/80 mt-3 font-mono"><%= receivedPercent %>% of expected rent collected</div>
+            </div>
+
+            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-amber-700 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10px] font-bold text-amber-500 tracking-wider uppercase">Outstanding Rent</div>
+                    <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-bold">!</div>
+                </div>
+                <div class="text-3xl font-bold text-amber-400 mt-4 tracking-tight">₨ <%= pending.toLocaleString() %></div>
+                <div class="text-[11px] text-amber-500/80 mt-3 font-mono"><%= pendingPercent %>% pending from current cycle</div>
+            </div>
+
+            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-violet-700 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10px] font-bold text-violet-400 tracking-wider uppercase">Advance Payments</div>
+                    <div class="w-10 h-10 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 text-sm font-bold">A</div>
+                </div>
+                <div class="text-3xl font-bold text-violet-300 mt-4 tracking-tight">₨ <%= advanceReceived.toLocaleString() %></div>
+                <div class="text-[11px] text-violet-400/80 mt-3 font-mono">
+                    This month: ₨ <%= advanceThisMonth.toLocaleString() %>
+                </div>
+            </div>
+
+            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-slate-600 transition-colors">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Vacancy Ratio</div>
+                    <div class="w-10 h-10 rounded-2xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center text-slate-300 text-sm font-bold">%</div>
+                </div>
+                <div class="text-3xl font-bold text-white mt-4 tracking-tight"><%= overallStats.vacancyRate.toFixed(1) %>%</div>
+                <div class="text-[11px] text-slate-500 mt-3 font-mono">
+                    <%= overallStats.vacantUnits %> vacant / <%= overallStats.totalUnits %> total units
+                </div>
+            </div>
+        </section>
+
+        <!-- Cities Summary -->
+        <section class="bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                    <h2 class="text-white text-base font-bold">Portfolio Cities</h2>
+                    <p class="text-slate-500 text-xs mt-1">City wise properties, unit occupancy and rent collection summary.</p>
+                </div>
+
+                <% if (canAddCities) { %>
+                    <a href="/cities/add" class="inline-flex items-center justify-center px-3 py-2 bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
+                        + Add New City
+                    </a>
+                <% } %>
+            </div>
+
+            <div class="p-5">
+                <% if (citiesData && citiesData.length > 0) { %>
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+                        <% citiesData.forEach(city => { %>
+                            <div
+                                class="bg-[#0B0E14] border border-slate-800 rounded-3xl overflow-hidden hover:border-blue-500/40 transition-all <%= canViewCities ? 'cursor-pointer' : '' %>"
+                                <% if (canViewCities) { %> onclick="window.location.href='/cities/<%= city.id %>'" <% } %>
+                            >
+                                <div class="p-5">
+                                    <div class="flex items-start justify-between gap-4 mb-5">
+                                        <div>
+                                            <h3 class="text-white text-lg font-bold capitalize tracking-tight"><%= city.name %></h3>
+                                            <p class="text-slate-500 text-xs mt-1"><%= city.province %></p>
+                                        </div>
+
+                                        <span class="px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[10px] uppercase tracking-wider font-bold rounded-lg">
+                                            <%= city.propertyCount %> Properties
+                                        </span>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
+                                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Total Units</div>
+                                            <div class="text-white text-lg font-bold mt-1"><%= city.unitCount %></div>
+                                        </div>
+
+                                        <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
+                                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Rented</div>
+                                            <div class="text-emerald-400 text-lg font-bold mt-1"><%= city.rentedCount %></div>
+                                        </div>
+
+                                        <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
+                                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Vacant</div>
+                                            <div class="text-red-400 text-lg font-bold mt-1"><%= city.vacantCount %></div>
+                                        </div>
+
+                                        <div class="border border-slate-800 bg-[#10141D] rounded-2xl p-3">
+                                            <div class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">Expected</div>
+                                            <div class="text-slate-200 text-lg font-bold mt-1">₨ <%= (city.expectedRent / 1000).toFixed(0) %>k</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="px-5 py-4 border-t border-slate-800 bg-[#10141D] flex justify-between items-center">
+                                    <span class="text-slate-500 text-xs font-semibold">Cash Collection</span>
+                                    <span class="text-white text-sm font-bold font-mono">₨ <%= city.receivedRent.toLocaleString() %></span>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
                 <% } else { %>
-                    <div class="col-span-3 bg-[#111111] p-8 rounded-xl border border-[#262626] text-center text-zinc-500">
+                    <div class="p-10 text-center text-slate-500 text-sm">
                         <p>No cities available. Add your first city to begin portfolio operations.</p>
-                        <a href="/cities/add" class="inline-block mt-3 px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md text-xs font-semibold">
-                            Add City
-                        </a>
+                        <% if (canAddCities) { %>
+                            <a href="/cities/add" class="inline-flex mt-4 px-4 py-2 bg-white text-black rounded-xl text-xs font-bold hover:bg-slate-200">
+                                Add City
+                            </a>
+                        <% } %>
                     </div>
                 <% } %>
             </div>
-        </div>
+        </section>
 
-        <!-- Recent Activity Logs section -->
-        <div class="pt-2">
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">System Live Logs</h3>
-                <a href="/logs" class="text-xs text-zinc-500 hover:text-zinc-400 font-medium">View All Logs</a>
+        <!-- Logs -->
+        <section class="bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between gap-3">
+                <div>
+                    <h3 class="text-white text-base font-bold">Recent Activity</h3>
+                    <p class="text-slate-500 text-xs mt-1">Latest administrative and system actions.</p>
+                </div>
+
+                <% if (canViewLogs) { %>
+                    <a href="/logs" class="text-xs text-slate-400 hover:text-white font-bold">
+                        View All Logs
+                    </a>
+                <% } %>
             </div>
-            <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg divide-y divide-[#1F1F1F]">
+
+            <div class="divide-y divide-slate-800">
                 <% if (activityLogs && activityLogs.length > 0) { %>
                     <% activityLogs.slice(0, 5).forEach(log => { %>
-                        <div class="p-4 flex justify-between items-center text-xs hover:bg-[#161616]/50 transition-colors">
-                            <div class="flex items-center gap-3">
-                                <span class="px-2 py-0.5 bg-[#262626] border border-[#3F3F46]/20 rounded text-[10px] text-zinc-400 font-mono uppercase font-semibold"><%= log.action %></span>
-                                <span class="text-zinc-200"><%= log.details %></span>
+                        <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 hover:bg-slate-900/50 transition-colors">
+                            <div class="flex items-start md:items-center gap-3">
+                                <span class="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-[10px] text-slate-400 font-mono uppercase font-bold">
+                                    <%= log.action %>
+                                </span>
+                                <span class="text-slate-300 text-xs leading-relaxed"><%= log.details %></span>
                             </div>
-                            <span class="text-zinc-500 font-mono"><%= new Date(log.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %></span>
+                            <span class="text-slate-500 text-[11px] font-mono shrink-0">
+                                <%= new Date(log.created_at).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) %>
+                            </span>
                         </div>
                     <% }); %>
                 <% } else { %>
-                    <div class="p-4 text-center text-zinc-500 text-xs">No active logs saved.</div>
+                    <div class="p-8 text-center text-slate-500 text-xs">No active logs saved.</div>
                 <% } %>
             </div>
-        </div>
-
+        </section>
     </div>
 </main>
 
