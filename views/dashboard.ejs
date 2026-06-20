@@ -120,7 +120,7 @@
                 </div>
 
                 <div class="h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div class="h-full bg-emerald-500 rounded-full" style="width: <%= receivedPercent %>%;"></div>
+                    <div id="collection-health-bar" class="h-full w-0 bg-emerald-500 rounded-full transition-all duration-500" data-progress="<%= receivedPercent %>"></div>
                 </div>
 
                 <div class="flex justify-between text-[11px] text-slate-500 mt-3 font-mono">
@@ -300,4 +300,16 @@
     </div>
 </main>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const collectionBar = document.getElementById('collection-health-bar');
+
+        if (collectionBar) {
+            const rawProgress = Number(collectionBar.dataset.progress || 0);
+            const safeProgress = Math.min(100, Math.max(0, rawProgress));
+
+            collectionBar.style.width = safeProgress + '%';
+        }
+    });
+</script>
 <%- include('partials/footer') %>
