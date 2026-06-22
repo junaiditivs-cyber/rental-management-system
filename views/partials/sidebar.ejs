@@ -1,8 +1,8 @@
-<% const activeClass = "group relative flex items-center gap-3 px-3 py-3 rounded-2xl bg-blue-600/15 text-white border border-blue-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all"; %>
-<% const inactiveClass = "group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-slate-400 hover:text-white hover:bg-white/[0.055] border border-transparent hover:border-white/10 transition-all"; %>
+<% const activeClass = "sidebar-nav-active group relative flex items-center gap-3 px-3 py-3 rounded-2xl bg-blue-600/15 text-white border border-blue-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all"; %>
+<% const inactiveClass = "sidebar-nav-inactive group relative flex items-center gap-3 px-3 py-3 rounded-2xl text-slate-400 hover:text-white hover:bg-white/[0.055] border border-transparent hover:border-white/10 transition-all"; %>
 
 <!-- Mobile Top Navigation Bar -->
-<div class="md:hidden h-16 border-b border-slate-800 bg-[#070A10] flex items-center justify-between px-5 shrink-0 z-40">
+<div id="mobile-top-bar" class="md:hidden h-16 border-b border-slate-800 bg-[#070A10] flex items-center justify-between px-5 shrink-0 z-40">
     <button id="mobile-hamburger" class="text-white focus:outline-none p-2 hover:bg-white/5 rounded-xl transition-colors" aria-label="Toggle Sidebar Menu">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -23,7 +23,7 @@
 <div id="sidebar-overlay" class="fixed inset-0 bg-black/70 hidden z-40 transition-opacity duration-300 backdrop-blur-sm md:hidden"></div>
 
 <!-- Premium Sidebar -->
-<aside id="sidebar-container" class="w-72 border-r border-slate-800 bg-[#070A10] flex flex-col h-full shrink-0 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:transform max-md:-translate-x-full transition-all duration-300 ease-in-out">
+<aside id="sidebar-container" class="theme-sidebar w-72 border-r border-slate-800 bg-[#070A10] flex flex-col h-full shrink-0 max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:transform max-md:-translate-x-full transition-all duration-300 ease-in-out">
 
     <!-- Brand Header -->
     <div class="p-5 border-b border-slate-800 shrink-0 bg-gradient-to-b from-blue-950/20 to-transparent">
@@ -303,33 +303,58 @@
         const iconSun = document.getElementById('theme-icon-sun');
         const iconMoon = document.getElementById('theme-icon-moon');
 
-        function syncThemeIcons() {
-            const isLightActive = document.documentElement.classList.contains('light');
+        function applyTheme(theme, persist) {
+            const isLight = theme === 'light';
 
-            if (isLightActive) {
-                if (iconSun) iconSun.classList.remove('hidden');
-                if (iconMoon) iconMoon.classList.add('hidden');
-            } else {
-                if (iconSun) iconSun.classList.add('hidden');
-                if (iconMoon) iconMoon.classList.remove('hidden');
+            document.documentElement.classList.toggle('light', isLight);
+            document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
+            document.documentElement.style.colorScheme = isLight ? 'light' : 'dark';
+
+            if (iconSun) iconSun.classList.toggle('hidden', !isLight);
+            if (iconMoon) iconMoon.classList.toggle('hidden', isLight);
+
+            if (btnToggle) {
+                btnToggle.setAttribute(
+                    'aria-label',
+                    isLight ? 'Switch to dark mode' : 'Switch to light mode'
+                );
+                btnToggle.setAttribute(
+                    'title',
+                    isLight ? 'Switch to dark mode' : 'Switch to light mode'
+                );
             }
+
+            if (persist) {
+                try {
+                    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                } catch (error) {
+                    console.warn('Unable to save theme preference:', error);
+                }
+            }
+
+            window.dispatchEvent(
+                new CustomEvent('themechange', {
+                    detail: { theme: isLight ? 'light' : 'dark' }
+                })
+            );
         }
 
+        let initialTheme = 'dark';
+
+        try {
+            initialTheme =
+                localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+        } catch (error) {}
+
+        applyTheme(initialTheme, false);
+
         if (btnToggle) {
-            syncThemeIcons();
+            btnToggle.addEventListener('click', function () {
+                const nextTheme = document.documentElement.classList.contains('light')
+                    ? 'dark'
+                    : 'light';
 
-            btnToggle.addEventListener('click', function() {
-                const targetEl = document.documentElement;
-
-                if (targetEl.classList.contains('light')) {
-                    targetEl.classList.remove('light');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    targetEl.classList.add('light');
-                    localStorage.setItem('theme', 'light');
-                }
-
-                syncThemeIcons();
+                applyTheme(nextTheme, true);
             });
         }
     });

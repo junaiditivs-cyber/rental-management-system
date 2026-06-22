@@ -372,6 +372,10 @@ app.set('trust proxy', 1);
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(
+  '/vendor/sortablejs',
+  express.static(path.join(process.cwd(), 'node_modules', 'sortablejs'))
+);
 app.use(session({
   secret: process.env.SESSION_SECRET || 'pk_rental_secret_9922',
   resave: false,
@@ -382,16 +386,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production'
   }
 }));
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'pk_rental_secret_9922',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    maxAge: 24 * 60 * 60 * 1000,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
-  }
-}));
+
 
 app.use(asyncHandler(async (req: any, res: any, next: any) => {
   const admin = (req.session as any)?.admin;
@@ -432,8 +427,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(process.cwd(), 'views'));
 
 // Set EJS Engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(process.cwd(), 'views'));
+
 
 // Auth Guard Middleware
 function requireAuth(req: any, res: any, next: any) {
@@ -451,37 +445,82 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', asyncHandler(async (req: any, res: any) => {
-  const { username, password } = req.body;
+  const rawUsername = String(req.body.username || '')
+    .trim()
+    .toLowerCase();
 
-  const { data: admin, error } = await supabase
+  const password = String(req.body.password || '');
+
+  if (!rawUsername || !password) {
+    return res.render('auth/login', {
+      error_msg: 'Gmail address and password are required.'
+    });
+  }
+
+  const gmailUsername = rawUsername.includes('@')
+    ? rawUsername
+    : `${rawUsername}@gmail.com`;
+
+  const usernameWithoutDomain = gmailUsername.split('@')[0];
+
+  const possibleUsernames = [
+    gmailUsername,
+    usernameWithoutDomain
+  ];
+
+  const { data: matchedAdmins, error } = await supabase
     .from('admin_users')
     .select('*')
-    .eq('username', username)
-    .maybeSingle();
+    .in('username', possibleUsernames)
+    .limit(2);
 
-  if (error) throw error;
-
-  // Current project stores admin123 as plain text in password_hash.
-  // If you later switch to bcrypt, update this comparison.
-  if (admin && admin.password_hash === password) {
-    (req.session as any).admin = {
-  id: admin.id,
-  username: admin.username,
-  role: admin.role || 'User',
-  full_name: admin.full_name || admin.username
-};
-    await logActivity('Admin Login', `User ${admin.username} authorized successfully.`);
-    req.session.save((err: any) => {
-      if (err) console.error('Session save error:', err);
-      res.redirect('/');
-    });
-  } else {
-    res.render('auth/login', { error_msg: 'Incorrect username or password. Try admin / admin123' });
+  if (error) {
+    throw error;
   }
-}));
 
-// -----------------------------------------
-// USER MANAGEMENT AND PROPERTY ASSIGNMENTS
+  const admins = matchedAdmins || [];
+
+  const admin =
+    admins.find(
+      row =>
+        String(row.username || '').trim().toLowerCase() === gmailUsername
+    ) ||
+    admins.find(
+      row =>
+        String(row.username || '').trim().toLowerCase() === usernameWithoutDomain
+    ) ||
+    null;
+
+  if (!admin || String(admin.password_hash || '') !== password) {
+    return res.render('auth/login', {
+      error_msg: 'Incorrect Gmail address or password.'
+    });
+  }
+
+  (req.session as any).admin = {
+    id: admin.id,
+    username: admin.username,
+    role: admin.role || 'User',
+    full_name: admin.full_name || admin.username
+  };
+
+  await logActivity(
+    'Admin Login',
+    `User ${admin.username} authorized successfully.`
+  );
+
+  req.session.save((sessionError: any) => {
+    if (sessionError) {
+      console.error('Session save error:', sessionError);
+
+      return res.render('auth/login', {
+        error_msg: 'Login session could not be saved. Please try again.'
+      });
+    }
+
+    return res.redirect('/');
+  });
+}));
 // -----------------------------------------
 // USER MANAGEMENT AND PROPERTY ASSIGNMENTS
 // -----------------------------------------
@@ -873,14 +912,17 @@ const NORMAL_USER_ROUTE_PERMISSIONS: RoutePermissionRule[] = [
 
   // Floors
   { method: 'POST', path: '/floors/add', permission: 'add_floors' },
+  { method: 'POST', path: '/floors/reorder', permission: 'edit_units' },
   { method: 'POST', path: '/floors/:id/delete', permission: 'delete_floors' },
 
   // Units
   { method: 'GET', path: '/units', permission: 'view_units' },
   { method: 'GET', path: '/units/add', permission: 'add_units' },
   { method: 'POST', path: '/units/add', permission: 'add_units' },
+  { method: 'POST', path: '/units/reorder', permission: 'edit_units' },
   { method: 'GET', path: '/units/:id/edit', permission: 'edit_units' },
   { method: 'POST', path: '/units/:id/edit', permission: 'edit_units' },
+  
   { method: 'POST', path: '/units/:id/delete', permission: 'delete_units' },
   { method: 'GET', path: '/units/:id', permission: 'view_units' },
 
@@ -979,14 +1021,24 @@ app.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
   const pendingRentArrears = currentMonthPayments.reduce((sum, p) => sum + toNumber(p.pending_amount), 0);
   const totalAdvanceReceived = db.advance_payments.reduce((sum, a) => sum + toNumber(a.amount), 0);
 
-const currentMonthAdvanceReceived = db.advance_payments
-  .filter(a => {
-    if (!a.received_date) return false;
-    const advanceDate = new Date(a.received_date);
-    return advanceDate.getMonth() + 1 === currentMonth && advanceDate.getFullYear() === currentYear;
-  })
-  .reduce((sum, a) => sum + toNumber(a.amount), 0);
-  const vacancyRate = totalUnitsCount > 0 ? (vacantUnitsCount / totalUnitsCount) * 100 : 0;
+  const currentMonthAdvanceReceived = db.advance_payments
+    .filter(a => {
+      if (!a.received_date) return false;
+
+      const receivedDate = new Date(a.received_date);
+      if (Number.isNaN(receivedDate.getTime())) return false;
+
+      return (
+        receivedDate.getMonth() + 1 === currentMonth &&
+        receivedDate.getFullYear() === currentYear
+      );
+    })
+    .reduce((sum, a) => sum + toNumber(a.amount), 0);
+
+  const vacancyRate =
+    totalUnitsCount > 0
+      ? (vacantUnitsCount / totalUnitsCount) * 100
+      : 0;
 
   const overallStats = {
   expected: expectedMonthlyRent,
@@ -1176,7 +1228,12 @@ app.get('/properties', requireAuth, asyncHandler(async (req: any, res: any) => {
       rentedCount
     };
   });
-  res.render('properties/list', { properties: filteredProperties, cities: db.cities });
+  res.render('properties/list', {
+    properties: filteredProperties,
+    cities: db.cities,
+    success_msg: req.query.success_msg ? String(req.query.success_msg) : null,
+    error_msg: req.query.error_msg ? String(req.query.error_msg) : null
+  });
 }));
 
 app.get('/properties/add', requireAuth, asyncHandler(async (req: any, res: any) => {
@@ -1213,10 +1270,36 @@ app.get('/properties/:id', requireAuth, asyncHandler(async (req: any, res: any) 
     area_name: area ? area.name : 'Unknown'
   };
 
-  const floors = db.floors.filter(f => f.property_id === property.id).map(floor => {
-    const floorUnits = db.units.filter(u => u.floor_id === floor.id);
-    return { ...floor, units: floorUnits };
-  });
+  const floors = db.floors
+    .filter(f => f.property_id === property.id)
+    .sort((a, b) => {
+      const orderA = Number(a.sort_order || 0);
+      const orderB = Number(b.sort_order || 0);
+
+      if (orderA !== orderB) return orderA - orderB;
+
+      return String(a.name || '').localeCompare(String(b.name || ''), undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    })
+    .map(floor => {
+      const floorUnits = db.units
+        .filter(u => u.floor_id === floor.id && u.property_id === property.id)
+        .sort((a, b) => {
+          const orderA = Number(a.sort_order || 0);
+          const orderB = Number(b.sort_order || 0);
+
+          if (orderA !== orderB) return orderA - orderB;
+
+          return String(a.name || '').localeCompare(String(b.name || ''), undefined, {
+            numeric: true,
+            sensitivity: 'base'
+          });
+        });
+
+      return { ...floor, units: floorUnits };
+    });
 
   const units = db.units.filter(u => u.property_id === property.id);
   const expectSum = units.reduce((sum, u) => sum + toNumber(u.rent_amount), 0);
@@ -1240,7 +1323,14 @@ app.get('/properties/:id', requireAuth, asyncHandler(async (req: any, res: any) 
   res.render('properties/detail', {
     property,
     floors,
-    rentSummary: { expected: expectSum, rented: rentedSum, vacant: vacantSum, total: units.length }
+    rentSummary: {
+      expected: expectSum,
+      rented: rentedSum,
+      vacant: vacantSum,
+      total: units.length
+    },
+    success_msg: req.query.success_msg ? String(req.query.success_msg) : null,
+    error_msg: req.query.error_msg ? String(req.query.error_msg) : null
   });
 }));
 
@@ -1267,39 +1357,193 @@ app.post('/properties/:id/edit', requireAuth, asyncHandler(async (req: any, res:
   res.redirect(`/properties/${req.params.id}`);
 }));
 
-app.post('/properties/:id/delete', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const { data: linkedUnits, error } = await supabase.from('units').select('id').eq('property_id', req.params.id).limit(1);
-  if (error) throw error;
-  if (linkedUnits && linkedUnits.length > 0) {
-    return res.status(400).send('Locked: Units reside under this property portfolio.');
-  }
-  await supabase.from('floors').delete().eq('property_id', req.params.id);
-  await deleteById('properties', req.params.id);
-  await logActivity('Delete Property', `Decompiled property node ID ${req.params.id}.`);
-  res.redirect('/properties');
-}));
+app.post(
+  '/properties/:id/delete',
+  requireAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const propertyId = String(req.params.id);
 
+    const { data: linkedUnits, error: unitsError } = await supabase
+      .from('units')
+      .select('id, name, status')
+      .eq('property_id', propertyId);
+
+    if (unitsError) {
+      throw unitsError;
+    }
+
+    if (linkedUnits && linkedUnits.length > 0) {
+      return res.redirect(
+        `/properties/${propertyId}?error_msg=` +
+        encodeURIComponent(
+          `Property delete nahi ho sakti. Pehle is property ki ${linkedUnits.length} unit(s) remove karein.`
+        )
+      );
+    }
+
+    const { error: floorsError } = await supabase
+      .from('floors')
+      .delete()
+      .eq('property_id', propertyId);
+
+    if (floorsError) {
+      throw floorsError;
+    }
+
+    await deleteById('properties', propertyId);
+
+    await logActivity(
+      'Delete Property',
+      `Deleted empty property ID ${propertyId}.`
+    );
+
+    return res.redirect(
+      '/properties?success_msg=' +
+      encodeURIComponent('Property deleted successfully.')
+    );
+  })
+);  
 // -----------------------------------------
 // FLOOR ROUTES
 // -----------------------------------------
 app.post('/floors/add', requireAuth, asyncHandler(async (req: any, res: any) => {
+  const db = await loadDb();
   const { property_id, name } = req.body;
-  await insertOne('floors', { property_id, name });
+
+  const propertyFloors = db.floors.filter(
+    floor => String(floor.property_id) === String(property_id)
+  );
+
+  const nextSortOrder = propertyFloors.length > 0
+    ? Math.max(...propertyFloors.map(floor => Number(floor.sort_order || 0))) + 1
+    : 1;
+
+  await insertOne('floors', {
+    property_id,
+    name,
+    sort_order: nextSortOrder
+  });
+
   await logActivity('Create Floor Level', `Installed floor level ${name} on property ${property_id}.`);
   res.redirect(`/properties/${property_id}`);
 }));
 
-app.post('/floors/:id/delete', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const { property_id } = req.body;
-  const { data: linkedUnits, error } = await supabase.from('units').select('id').eq('floor_id', req.params.id).limit(1);
-  if (error) throw error;
-  if (linkedUnits && linkedUnits.length > 0) {
-    return res.status(400).send('Locked: Rental units reside on this floor level.');
-  }
-  await deleteById('floors', req.params.id);
-  await logActivity('Delete Floor', `Purged floor ID ${req.params.id}.`);
-  res.redirect(`/properties/${property_id}`);
-}));
+app.post(
+  '/floors/reorder',
+  requireAuth,
+  requirePermission('edit_units'),
+  asyncHandler(async (req: any, res: any) => {
+    const db = await loadScopedDb(req);
+
+    const propertyId = String(req.body.property_id || '').trim();
+    const orderedFloorIds = Array.isArray(req.body.ordered_floor_ids)
+      ? req.body.ordered_floor_ids
+          .map((id: any) => String(id).trim())
+          .filter(Boolean)
+      : [];
+
+    if (!propertyId || orderedFloorIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Property and floor order are required.'
+      });
+    }
+
+    const property = db.properties.find(
+      propertyRow => String(propertyRow.id) === propertyId
+    );
+
+    if (!property) {
+      return res.status(403).json({
+        success: false,
+        message: 'Property access denied.'
+      });
+    }
+
+    const propertyFloors = db.floors.filter(
+      floor => String(floor.property_id) === propertyId
+    );
+
+    const validFloorIds = new Set(
+      propertyFloors.map(floor => String(floor.id))
+    );
+
+    const uniqueOrderedIds = [...new Set(orderedFloorIds)];
+
+    const orderIsValid =
+      uniqueOrderedIds.length === propertyFloors.length &&
+      uniqueOrderedIds.every(floorId => validFloorIds.has(floorId));
+
+    if (!orderIsValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Submitted section order does not match this property.'
+      });
+    }
+
+    await Promise.all(
+      uniqueOrderedIds.map((floorId, index) =>
+        updateById('floors', floorId, {
+          sort_order: index + 1
+        })
+      )
+    );
+
+    await logActivity(
+      'Reorder Property Sections',
+      `Reordered ${uniqueOrderedIds.length} section(s) inside property ${propertyId}.`
+    );
+
+    return res.json({
+      success: true,
+      message: 'Section order saved successfully.'
+    });
+  })
+);
+
+app.post(
+  '/floors/:id/delete',
+  requireAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const propertyId = String(req.body.property_id || '').trim();
+    const floorId = String(req.params.id || '').trim();
+
+    const { data: linkedUnits, error } = await supabase
+      .from('units')
+      .select('id')
+      .eq('floor_id', floorId)
+      .limit(1);
+
+    if (error) throw error;
+
+    if (linkedUnits && linkedUnits.length > 0) {
+      const target = propertyId
+        ? `/properties/${propertyId}`
+        : '/properties';
+
+      return res.redirect(
+        target +
+        '?error_msg=' +
+        encodeURIComponent(
+          'Section delete nahi ho sakta. Pehle is section ki tamam units remove karein.'
+        )
+      );
+    }
+
+    await deleteById('floors', floorId);
+    await logActivity('Delete Floor', `Purged floor ID ${floorId}.`);
+
+    const target = propertyId
+      ? `/properties/${propertyId}`
+      : '/properties';
+
+    return res.redirect(
+      target +
+      '?success_msg=' +
+      encodeURIComponent('Section deleted successfully.')
+    );
+  })
+);
 
 // -----------------------------------------
 // UNIT BLOCK ROUTES
@@ -1326,7 +1570,14 @@ app.get('/units/add', requireAuth, asyncHandler(async (req: any, res: any) => {
 }));
 
 app.post('/units/add', requireAuth, asyncHandler(async (req: any, res: any) => {
+  const db = await loadDb();
   const { property_id, floor_id, name, unit_type, rent_amount, advance_amount, notes } = req.body;
+
+  const sameFloorUnits = db.units.filter(u => u.property_id === property_id && u.floor_id === floor_id);
+  const nextSortOrder = sameFloorUnits.length > 0
+    ? Math.max(...sameFloorUnits.map(u => Number(u.sort_order || 0))) + 1
+    : 1;
+
   await insertOne('units', {
     property_id,
     floor_id,
@@ -1335,11 +1586,98 @@ app.post('/units/add', requireAuth, asyncHandler(async (req: any, res: any) => {
     rent_amount: toNumber(rent_amount),
     advance_amount: toNumber(advance_amount),
     status: 'Vacant',
+    sort_order: nextSortOrder,
     notes: notes || ''
   });
+
   await logActivity('Deploy Unit', `Deployed unit ${name} (${unit_type}) to property ${property_id}.`);
   res.redirect(`/properties/${property_id}`);
 }));
+
+
+
+app.post(
+  '/units/reorder',
+  requireAuth,
+  requirePermission('edit_units'),
+  asyncHandler(async (req: any, res: any) => {
+    const db = await loadScopedDb(req);
+
+    const propertyId = String(req.body.property_id || '').trim();
+    const floorId = String(req.body.floor_id || '').trim();
+
+    const orderedUnitIds = Array.isArray(req.body.ordered_unit_ids)
+      ? req.body.ordered_unit_ids
+          .map((id: any) => String(id).trim())
+          .filter(Boolean)
+      : [];
+
+    if (!propertyId || !floorId || orderedUnitIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Property, floor and ordered units are required.'
+      });
+    }
+
+    const property = db.properties.find(
+      propertyRow => String(propertyRow.id) === propertyId
+    );
+
+    const floor = db.floors.find(
+      floorRow =>
+        String(floorRow.id) === floorId &&
+        String(floorRow.property_id) === propertyId
+    );
+
+    if (!property || !floor) {
+      return res.status(403).json({
+        success: false,
+        message: 'Property or floor access denied.'
+      });
+    }
+
+    const floorUnits = db.units.filter(
+      unit =>
+        String(unit.property_id) === propertyId &&
+        String(unit.floor_id) === floorId
+    );
+
+    const validUnitIds = new Set(
+      floorUnits.map(unit => String(unit.id))
+    );
+
+    const uniqueOrderedIds = [...new Set(orderedUnitIds)];
+
+    const orderIsValid =
+      uniqueOrderedIds.length === floorUnits.length &&
+      uniqueOrderedIds.every(unitId => validUnitIds.has(unitId));
+
+    if (!orderIsValid) {
+      return res.status(400).json({
+        success: false,
+        message: 'Submitted shop order does not match this floor.'
+      });
+    }
+
+    await Promise.all(
+      uniqueOrderedIds.map((unitId, index) =>
+        updateById('units', unitId, {
+          sort_order: index + 1
+        })
+      )
+    );
+
+    await logActivity(
+      'Reorder Units',
+      `Reordered ${uniqueOrderedIds.length} units on floor ${floorId}.`
+    );
+
+    return res.json({
+      success: true,
+      message: 'Shop order saved successfully.'
+    });
+  })
+);
 
 app.get('/units/:id', requireAuth, asyncHandler(async (req: any, res: any) => {
   const db = await loadDb();
@@ -1373,7 +1711,13 @@ app.get('/units/:id', requireAuth, asyncHandler(async (req: any, res: any) => {
     payment_date: new Date(p.payment_date).toLocaleDateString()
   }));
 
-  res.render('units/detail', { unit, activeAgreement, payments });
+  res.render('units/detail', {
+    unit,
+    activeAgreement,
+    payments,
+    success_msg: req.query.success_msg ? String(req.query.success_msg) : null,
+    error_msg: req.query.error_msg ? String(req.query.error_msg) : null
+  });
 }));
 
 app.get('/units/:id/edit', requireAuth, asyncHandler(async (req: any, res: any) => {
@@ -1399,17 +1743,47 @@ app.post('/units/:id/edit', requireAuth, asyncHandler(async (req: any, res: any)
   res.redirect(`/units/${req.params.id}`);
 }));
 
-app.post('/units/:id/delete', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const db = await loadDb();
-  const hasActiveLease = db.rent_agreements.some(ag => ag.unit_id === req.params.id && ag.status === 'Active');
-  if (hasActiveLease) return res.status(400).send('Locked: Tenant occupies this unit container.');
+app.post(
+  '/units/:id/delete',
+  requireAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const db = await loadDb();
+    const unitId = String(req.params.id || '').trim();
+    const unitObj = db.units.find(unit => String(unit.id) === unitId);
 
-  const unitObj = db.units.find(u => u.id === req.params.id);
-  const propId = unitObj ? unitObj.property_id : '';
-  await deleteById('units', req.params.id);
-  await logActivity('Purge Unit', `Removed rental unit ${req.params.id}.`);
-  res.redirect(propId ? `/properties/${propId}` : '/properties');
-}));
+    if (!unitObj) {
+      return res.redirect(
+        '/properties?error_msg=' +
+        encodeURIComponent('Unit not found.')
+      );
+    }
+
+    const hasActiveLease = db.rent_agreements.some(
+      agreement =>
+        String(agreement.unit_id) === unitId &&
+        String(agreement.status || '').toLowerCase() === 'active'
+    );
+
+    if (hasActiveLease) {
+      return res.redirect(
+        `/units/${unitId}?error_msg=` +
+        encodeURIComponent(
+          'Unit delete nahi ho sakti kyun ke is par active tenant agreement maujood hai.'
+        )
+      );
+    }
+
+    await deleteById('units', unitId);
+    await logActivity('Purge Unit', `Removed rental unit ${unitId}.`);
+
+    return res.redirect(
+      `/properties/${unitObj.property_id}?success_msg=` +
+      encodeURIComponent('Unit deleted successfully.')
+    );
+  })
+);
+
+
 
 // -----------------------------------------
 // TENANT PROFILE ROUTES
@@ -2078,13 +2452,39 @@ app.post('/smart-entry', requireAuth, asyncHandler(async (req: any, res: any) =>
     const floorName = new_unit_floor_name || 'Ground Floor';
     let floor = db.floors.find(f => f.property_id === chosenPropertyId && String(f.name).toLowerCase() === floorName.trim().toLowerCase());
     if (!floor) {
-      floor = await insertOne('floors', { property_id: chosenPropertyId, name: floorName.trim() });
+      const propertyFloors = db.floors.filter(
+        existingFloor => String(existingFloor.property_id) === String(chosenPropertyId)
+      );
+
+      const nextFloorSortOrder = propertyFloors.length > 0
+        ? Math.max(...propertyFloors.map(existingFloor => Number(existingFloor.sort_order || 0))) + 1
+        : 1;
+
+      floor = await insertOne('floors', {
+        property_id: chosenPropertyId,
+        name: floorName.trim(),
+        sort_order: nextFloorSortOrder
+      });
+
       db.floors.push(floor);
     }
 
     const existingUnit = db.units.find(u => String(u.name).toLowerCase() === new_unit_name.trim().toLowerCase() && u.property_id === chosenPropertyId);
     if (existingUnit) chosenUnitId = existingUnit.id;
     else {
+      const sameFloorUnits = db.units.filter(
+        unit =>
+          String(unit.property_id) === String(chosenPropertyId) &&
+          String(unit.floor_id) === String(floor.id)
+      );
+
+      const nextSortOrder =
+        sameFloorUnits.length > 0
+          ? Math.max(
+              ...sameFloorUnits.map(unit => Number(unit.sort_order || 0))
+            ) + 1
+          : 1;
+
       const newUnit = await insertOne('units', {
         property_id: chosenPropertyId,
         floor_id: floor.id,
@@ -2093,6 +2493,7 @@ app.post('/smart-entry', requireAuth, asyncHandler(async (req: any, res: any) =>
         rent_amount: toNumber(new_unit_rent_amount),
         advance_amount: toNumber(agreement_advance_amount),
         status: new_unit_status || 'Rented',
+        sort_order: nextSortOrder,
         notes: 'Created via Smart Entry'
       });
       chosenUnitId = newUnit.id;
@@ -2200,8 +2601,6 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).send(`Server Error: ${message}`);
 });
 
-// Start Express Listener
-// Start Express Listener only for local development
 // Start Express Listener only for local development
 if (!process.env.VERCEL) {
   ensureDefaultAdmin().then(() => {

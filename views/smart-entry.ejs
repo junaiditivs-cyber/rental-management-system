@@ -1,6 +1,21 @@
 <%- include('partials/header') %>
 <%- include('partials/sidebar') %>
 
+<%
+    const safeCities = (typeof cities !== 'undefined' && Array.isArray(cities)) ? cities : [];
+    const safeAreas = (typeof areas !== 'undefined' && Array.isArray(areas)) ? areas : [];
+    const safeProperties = (typeof properties !== 'undefined' && Array.isArray(properties)) ? properties : [];
+    const safeUnits = (typeof units !== 'undefined' && Array.isArray(units)) ? units : [];
+    const safeTenants = (typeof tenants !== 'undefined' && Array.isArray(tenants)) ? tenants : [];
+
+    const todayObject = new Date();
+    const todayValue = todayObject.toISOString().slice(0, 10);
+    const agreementEndObject = new Date(todayObject);
+    agreementEndObject.setFullYear(agreementEndObject.getFullYear() + 1);
+    agreementEndObject.setDate(agreementEndObject.getDate() - 1);
+    const agreementEndValue = agreementEndObject.toISOString().slice(0, 10);
+%>
+
 <main class="flex-1 flex flex-col h-full overflow-hidden">
     <!-- Header bar -->
     <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
@@ -9,7 +24,7 @@
     </header>
 
     <!-- Scrollable content area -->
-    <div class="p-8 flex-1 overflow-y-auto max-w-4xl mx-auto w-full space-y-6">
+    <div id="wizard-scroll" class="p-8 flex-1 overflow-y-auto max-w-4xl mx-auto w-full space-y-6">
         <div>
             <h1 class="text-white text-xl font-bold tracking-tight flex items-center gap-2">
                 <span class="p-1 px-2.5 bg-blue-500/10 text-blue-400 rounded-md text-sm">⚡</span>
@@ -87,7 +102,7 @@
                             <select id="city_id" name="city_id" onchange="onCityChanged(this.value)"
                                     class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                                 <option value="">-- Choose City --</option>
-                                <% cities.forEach(c => { %>
+                                <% safeCities.forEach(c => { %>
                                     <option value="<%= c.id %>"><%= c.name %> (<%= c.province %>)</option>
                                 <% }) %>
                             </select>
@@ -103,7 +118,7 @@
                             <div>
                                 <label for="new_city_province" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Province</label>
                                 <select id="new_city_province" name="new_city_province"
-                                        class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                        class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                                     <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa (KPK)</option>
                                     <option value="Punjab">Punjab</option>
                                     <option value="Federal Capital">Federal Capital</option>
@@ -142,7 +157,7 @@
                         <div id="area-select-wrapper">
                             <label for="area_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Choose Area</label>
                             <select id="area_id" name="area_id" onchange="onAreaChanged(this.value)" disabled
-                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all opacity-60">
+                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all opacity-60">
                                 <option value="">-- Choose Area --</option>
                             </select>
                         </div>
@@ -151,7 +166,7 @@
                         <div id="area-new-wrapper" class="hidden">
                             <label for="new_area_name" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">New Area Name</label>
                             <input type="text" id="new_area_name" name="new_area_name" placeholder="e.g. Sector G-11 or Saddar Bazaar"
-                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-750 focus:outline-none focus:border-blue-500/80 transition-all">
+                                   class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-blue-500/80 transition-all">
                         </div>
                     </div>
                 </div>
@@ -181,7 +196,7 @@
                         <div id="property-select-wrapper">
                             <label for="property_id" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Choose Property</label>
                             <select id="property_id" name="property_id" onchange="onPropertyChanged(this.value)" disabled
-                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all opacity-60">
+                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all opacity-60">
                                 <option value="">-- Choose Property --</option>
                             </select>
                         </div>
@@ -200,7 +215,7 @@
                         <div>
                             <label for="new_property_type" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Property Type</label>
                             <select id="new_property_type" name="new_property_type"
-                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                                 <option value="Plaza">Plaza</option>
                                 <option value="House">House</option>
                                 <option value="Shop">Shop Line / Mall</option>
@@ -263,14 +278,14 @@
                         <h4 class="text-zinc-200 text-xs font-semibold">New Unit Specifications</h4>
                     </div>
                     <div>
-                        <label for="new_unit_name" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Unit Name / Number</label>
+                        <label for="new_unit_name" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Unit Name / Number</label>
                         <input type="text" id="new_unit_name" name="new_unit_name" placeholder="e.g. Shop G-05 or Flat 102"
                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                     </div>
                     <div>
-                        <label for="new_unit_floor_name" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Floor Level</label>
+                        <label for="new_unit_floor_name" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Floor Level</label>
                         <select id="new_unit_floor_name" name="new_unit_floor_name"
-                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                             <option value="Ground Floor">Ground Floor</option>
                             <option value="First Floor">First Floor</option>
                             <option value="Second Floor">Second Floor</option>
@@ -280,9 +295,9 @@
                         </select>
                     </div>
                     <div>
-                        <label for="new_unit_type" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Unit Category Type</label>
+                        <label for="new_unit_type" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Unit Category Type</label>
                         <select id="new_unit_type" name="new_unit_type"
-                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                             <option value="Shop">Shop</option>
                             <option value="Apartment">Apartment</option>
                             <option value="Office">Office Suite</option>
@@ -292,15 +307,14 @@
                         </select>
                     </div>
                     <div>
-                        <label for="new_unit_rent_amount" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Base Expected Monthly Rent (₨)</label>
+                        <label for="new_unit_rent_amount" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Base Expected Monthly Rent (₨)</label>
                         <input type="number" id="new_unit_rent_amount" name="new_unit_rent_amount" placeholder="e.g. 35000" oninput="syncRentInput(this.value)"
                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                     </div>
                     <div>
-                        <label for="new_unit_status" class="block text-[11px] font-semibold text-zinc-455 uppercase tracking-wider mb-1.5">Initial Unit Status</label>
+                        <label for="new_unit_status" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Initial Unit Status</label>
                         <select id="new_unit_status" name="new_unit_status"
-                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
-                            <option value="Available">Available</option>
+                                class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                             <option value="Rented" selected>Rented (Auto Assign)</option>
                             <option value="Vacant">Vacant</option>
                             <option value="Maintenance">Maintenance Break</option>
@@ -347,8 +361,8 @@
                         <select id="tenant_id" name="tenant_id" onchange="onTenantChanged(this.value)"
                                 class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                             <option value="">-- Choose Tenant --</option>
-                            <% tenants.forEach(t => { %>
-                                <option value="<%= t.id %>"><%= t.name %> (<%= t.phone %> - CNIC: <%= t.cnic %>)</option>
+                            <% safeTenants.forEach(t => { %>
+                                <option value="<%= t.id %>"><%= t.name %> (<%= t.phone || 'No phone' %> - CNIC: <%= t.cnic || 'N/A' %>)</option>
                             <% }) %>
                         </select>
                     </div>
@@ -423,12 +437,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="agreement_start_date" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Agreement Start Date</label>
-                            <input type="date" id="agreement_start_date" name="agreement_start_date" required value="2026-06-16"
+                            <input type="date" id="agreement_start_date" name="agreement_start_date" required value="<%= todayValue %>"
                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
                         </div>
                         <div>
                             <label for="agreement_end_date" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Agreement End Date</label>
-                            <input type="date" id="agreement_end_date" name="agreement_end_date" required value="2027-06-15"
+                            <input type="date" id="agreement_end_date" name="agreement_end_date" required value="<%= agreementEndValue %>"
                                    class="w-full px-3 py-2 bg-[#161616] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
                         </div>
                         <div>
@@ -458,7 +472,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#141414] p-4 rounded-xl border border-dashed border-[#262626]">
                         <div>
                             <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Record Advance Security Payment?</label>
-                            <select name="record_advance_payment" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
+                            <select name="record_advance_payment" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all">
                                 <option value="yes" selected>Yes, Paid Automatically</option>
                                 <option value="no">No (Will show as unpaid/pending)</option>
                             </select>
@@ -466,7 +480,7 @@
 
                         <div>
                             <label class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2">Record First Month Rent Payment?</label>
-                            <select name="record_first_rent" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-350 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
+                            <select name="record_first_rent" class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
                                 <option value="yes" selected>Yes, Paid Fully (₨ <%= new Date().toLocaleDateString('en-US', {month: 'long', year: 'numeric'}) %>)</option>
                                 <option value="no">No, Pending Arrears</option>
                             </select>
@@ -474,14 +488,14 @@
 
                         <div>
                             <label for="payment_date" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Collection/Payment Date</label>
-                            <input type="date" id="payment_date" name="payment_date" value="2026-06-16"
+                            <input type="date" id="payment_date" name="payment_date" value="<%= todayValue %>"
                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-white text-sm focus:outline-none focus:border-blue-500/80 transition-all font-mono">
                         </div>
 
                         <div>
                             <label for="payment_method" class="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">Payment Method Category</label>
                             <select id="payment_method" name="payment_method"
-                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-355 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
+                                    class="w-full px-3 py-2 bg-[#1A1A1A] border border-[#262626] rounded-md text-zinc-300 text-sm focus:outline-none focus:border-blue-500/80 transition-all font-sans">
                                 <option value="Cash" selected>Cash Handover</option>
                                 <option value="Bank Transfer">Bank Transfer (HBL/Allied)</option>
                                 <option value="EasyPaisa">EasyPaisa e-wallet</option>
@@ -515,155 +529,236 @@
 </main>
 
 <script>
-    // Client-side raw datastore arrays injected safely from EJS backend
-    const rawAreas = <%- JSON.stringify(areas) %>;
-    const rawProperties = <%- JSON.stringify(properties) %>;
-    const rawUnits = <%- JSON.stringify(units) %>;
+    const rawAreas = <%- JSON.stringify(safeAreas).replace(/</g, '\\u003c') %>;
+    const rawProperties = <%- JSON.stringify(safeProperties).replace(/</g, '\\u003c') %>;
+    const rawUnits = <%- JSON.stringify(safeUnits).replace(/</g, '\\u003c') %>;
 
-    // Active screen navigation logic
     let currentStep = 1;
+    let isSubmitting = false;
 
-    function goToStep(stepNum) {
-        // Simple step transitions
-        document.getElementById(`step-section-${currentStep}`).classList.add('hidden');
-        document.getElementById(`step-section-${stepNum}`).classList.remove('hidden');
+    const byId = (id) => document.getElementById(id);
+    const asId = (value) => String(value ?? '');
+    const asNumber = (value) => {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : 0;
+    };
 
-        // Update progress indicators style
-        for (let idx = 1; idx <= 4; idx++) {
-            const indicator = document.getElementById(`step-indicator-${idx}`);
-            if (idx === stepNum) {
-                indicator.className = "w-6 h-6 rounded-full flex items-center justify-center font-bold bg-blue-600 text-white transition-colors duration-200";
-                indicator.nextElementSibling.className = "text-zinc-200 font-medium transition-colors duration-200";
-            } else if (idx < stepNum) {
-                indicator.className = "w-6 h-6 rounded-full flex items-center justify-center font-bold bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 transition-colors duration-200";
-                indicator.nextElementSibling.className = "text-zinc-400 font-medium transition-colors duration-200";
-            } else {
-                indicator.className = "w-6 h-6 rounded-full flex items-center justify-center font-bold bg-[#1F1F1F] text-zinc-500 transition-colors duration-200";
-                indicator.nextElementSibling.className = "text-zinc-500 font-medium transition-colors duration-200";
-            }
-        }
-        currentStep = stepNum;
-        
-        // Auto scroll to top of progress bar
-        document.querySelector('main').scrollTop = 0;
+    function getRadioValue(name) {
+        const selected = document.querySelector(`input[name="${name}"]:checked`);
+        return selected ? selected.value : '';
     }
 
-    // Toggle subsegments depending on selection card states
+    function setRadioValue(name, value) {
+        const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+        if (radio && !radio.disabled) radio.checked = true;
+    }
+
+    function setWrapperState(wrapperId, visible) {
+        const wrapper = byId(wrapperId);
+        if (!wrapper) return;
+
+        wrapper.classList.toggle('hidden', !visible);
+        wrapper.querySelectorAll('input, select, textarea').forEach((field) => {
+            field.disabled = !visible;
+        });
+    }
+
+    function setLabelDisabled(labelId, disabled) {
+        const label = byId(labelId);
+        if (!label) return;
+
+        label.classList.toggle('opacity-50', disabled);
+        label.classList.toggle('pointer-events-none', disabled);
+
+        const input = label.querySelector('input');
+        if (input) input.disabled = disabled;
+    }
+
+    function setSelectEnabled(select, enabled) {
+        if (!select) return;
+        select.disabled = !enabled;
+        select.classList.toggle('opacity-60', !enabled);
+    }
+
+    function resetSelect(selectId, placeholder, enabled = false) {
+        const select = byId(selectId);
+        if (!select) return;
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        setSelectEnabled(select, enabled);
+    }
+
+    function formatMoney(value) {
+        return asNumber(value).toLocaleString('en-PK');
+    }
+
+    function validateStep1() {
+        const cityMode = getRadioValue('city_mode');
+        const areaMode = getRadioValue('area_mode');
+        const propertyMode = getRadioValue('property_mode');
+
+        const cityValid = cityMode === 'new'
+            ? Boolean(byId('new_city_name')?.value.trim())
+            : Boolean(byId('city_id')?.value);
+
+        const areaValid = areaMode === 'new'
+            ? Boolean(byId('new_area_name')?.value.trim())
+            : Boolean(byId('area_id')?.value);
+
+        const propertyValid = propertyMode === 'new'
+            ? Boolean(byId('new_property_name')?.value.trim())
+            : Boolean(byId('property_id')?.value);
+
+        const valid = cityValid && areaValid && propertyValid;
+        byId('step-1-next').disabled = !valid;
+        return valid;
+    }
+
+    function validateStep2() {
+        const unitMode = getRadioValue('unit_mode');
+        const valid = unitMode === 'new'
+            ? Boolean(byId('new_unit_name')?.value.trim())
+            : Boolean(byId('unit_id')?.value);
+
+        byId('step-2-next').disabled = !valid;
+        return valid;
+    }
+
+    function validateStep3() {
+        const tenantMode = getRadioValue('tenant_mode');
+        const valid = tenantMode === 'new'
+            ? Boolean(byId('new_tenant_name')?.value.trim()) && Boolean(byId('new_tenant_phone')?.value.trim())
+            : Boolean(byId('tenant_id')?.value);
+
+        byId('step-3-next').disabled = !valid;
+        return valid;
+    }
+
+    function updateAllValidation() {
+        validateStep1();
+        validateStep2();
+        validateStep3();
+    }
+
+    function goToStep(stepNumber) {
+        if (stepNumber < 1 || stepNumber > 4) return;
+
+        if (stepNumber > currentStep) {
+            if (currentStep === 1 && !validateStep1()) return;
+            if (currentStep === 2 && !validateStep2()) return;
+            if (currentStep === 3 && !validateStep3()) return;
+        }
+
+        byId(`step-section-${currentStep}`)?.classList.add('hidden');
+        byId(`step-section-${stepNumber}`)?.classList.remove('hidden');
+
+        for (let index = 1; index <= 4; index++) {
+            const indicator = byId(`step-indicator-${index}`);
+            if (!indicator) continue;
+
+            const label = indicator.nextElementSibling;
+
+            if (index === stepNumber) {
+                indicator.className = 'w-6 h-6 rounded-full flex items-center justify-center font-bold bg-blue-600 text-white transition-colors duration-200';
+                if (label) label.className = 'text-zinc-200 font-medium transition-colors duration-200';
+            } else if (index < stepNumber) {
+                indicator.className = 'w-6 h-6 rounded-full flex items-center justify-center font-bold bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 transition-colors duration-200';
+                if (label) label.className = 'text-zinc-400 font-medium transition-colors duration-200';
+            } else {
+                indicator.className = 'w-6 h-6 rounded-full flex items-center justify-center font-bold bg-[#1F1F1F] text-zinc-500 transition-colors duration-200';
+                if (label) label.className = 'text-zinc-500 font-medium transition-colors duration-200';
+            }
+        }
+
+        currentStep = stepNumber;
+        byId('wizard-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function toggleCityMode(mode) {
-        const selectWrapper = document.getElementById('city-select-wrapper');
-        const newWrapper = document.getElementById('city-new-wrapper');
-        const nextButton = document.getElementById('step-1-next');
-        
-        if (mode === 'new') {
-            selectWrapper.classList.add('hidden');
-            newWrapper.classList.remove('hidden');
-            
-            // Force Area/Property setup modes to be "new" automatically because you cannot link a new city to old area/property
+        const isNew = mode === 'new';
+        setWrapperState('city-select-wrapper', !isNew);
+        setWrapperState('city-new-wrapper', isNew);
+
+        if (isNew) {
+            resetSelect('area_id', '-- Choose Area --');
+            resetSelect('property_id', '-- Choose Property --');
+            resetSelect('unit_id', '-- Choose Unit --');
+
+            setLabelDisabled('area-select-label', true);
+            setLabelDisabled('prop-select-label', true);
+            setLabelDisabled('unit-select-label', true);
+
             setRadioValue('area_mode', 'new');
             toggleAreaMode('new');
-            setLabelDisabled('area-select-label', true);
-            
-            checkStep1Validation();
         } else {
-            selectWrapper.classList.remove('hidden');
-            newWrapper.classList.add('hidden');
-            
-            setLabelDisabled('area-select-label', false);
-            checkStep1Validation();
+            const cityId = byId('city_id')?.value || '';
+            setLabelDisabled('area-select-label', !cityId);
+            onCityChanged(cityId);
         }
+
+        updateAllValidation();
     }
 
     function toggleAreaMode(mode) {
-        const selectWrapper = document.getElementById('area-select-wrapper');
-        const newWrapper = document.getElementById('area-new-wrapper');
-        
-        if (mode === 'new') {
-            selectWrapper.classList.add('hidden');
-            newWrapper.classList.remove('hidden');
-            
-            // Force Property to new also because new area means property inside it must be new
+        const isNew = mode === 'new';
+        setWrapperState('area-select-wrapper', !isNew);
+        setWrapperState('area-new-wrapper', isNew);
+
+        if (isNew) {
+            resetSelect('property_id', '-- Choose Property --');
+            resetSelect('unit_id', '-- Choose Unit --');
+
+            setLabelDisabled('prop-select-label', true);
+            setLabelDisabled('unit-select-label', true);
+
             setRadioValue('property_mode', 'new');
             togglePropMode('new');
-            setLabelDisabled('prop-select-label', true);
-            
-            checkStep1Validation();
         } else {
-            selectWrapper.classList.remove('hidden');
-            newWrapper.classList.add('hidden');
-            
-            setLabelDisabled('prop-select-label', false);
-            checkStep1Validation();
+            const areaId = byId('area_id')?.value || '';
+            setLabelDisabled('prop-select-label', !areaId);
+            if (areaId) onAreaChanged(areaId);
         }
+
+        updateAllValidation();
     }
 
     function togglePropMode(mode) {
-        const selectWrapper = document.getElementById('property-select-wrapper');
-        const newWrapper = document.getElementById('property-new-wrapper');
-        
-        if (mode === 'new') {
-            selectWrapper.classList.add('hidden');
-            newWrapper.classList.remove('hidden');
-            
-            // If property is new, force Unit mode to be New!
+        const isNew = mode === 'new';
+        setWrapperState('property-select-wrapper', !isNew);
+        setWrapperState('property-new-wrapper', isNew);
+
+        if (isNew) {
+            resetSelect('unit_id', '-- Choose Unit --');
+            setLabelDisabled('unit-select-label', true);
             setRadioValue('unit_mode', 'new');
             toggleUnitMode('new');
-            setLabelDisabled('unit-select-label', true);
-            
-            checkStep1Validation();
         } else {
-            selectWrapper.classList.remove('hidden');
-            newWrapper.classList.add('hidden');
-            
-            setLabelDisabled('unit-select-label', false);
-            checkStep1Validation();
+            const propertyId = byId('property_id')?.value || '';
+            setLabelDisabled('unit-select-label', !propertyId);
+            if (propertyId) onPropertyChanged(propertyId);
         }
+
+        updateAllValidation();
     }
 
     function toggleUnitMode(mode) {
-        const selectWrapper = document.getElementById('unit-select-wrapper');
-        const newWrapper = document.getElementById('unit-new-wrapper');
-        
-        if (mode === 'new') {
-            selectWrapper.classList.add('hidden');
-            newWrapper.classList.remove('hidden');
-            
-            checkStep2Validation();
-        } else {
-            selectWrapper.classList.remove('hidden');
-            newWrapper.classList.add('hidden');
-            
-            checkStep2Validation();
-        }
+        const isNew = mode === 'new';
+        setWrapperState('unit-select-wrapper', !isNew);
+        setWrapperState('unit-new-wrapper', isNew);
+        validateStep2();
     }
 
     function toggleTenantMode(mode) {
-        const selectWrapper = document.getElementById('tenant-select-wrapper');
-        const newWrapper = document.getElementById('tenant-new-wrapper');
-        
-        if (mode === 'new') {
-            selectWrapper.classList.add('hidden');
-            newWrapper.classList.remove('hidden');
-            checkStep3Validation();
-        } else {
-            selectWrapper.classList.remove('hidden');
-            newWrapper.classList.add('hidden');
-            checkStep3Validation();
-        }
+        const isNew = mode === 'new';
+        setWrapperState('tenant-select-wrapper', !isNew);
+        setWrapperState('tenant-new-wrapper', isNew);
+        validateStep3();
     }
 
-    // Dynamic filtering cascades
     function onCityChanged(cityId) {
-        const areaSelect = document.getElementById('area_id');
-        const areaModeSelect = document.getElementById('area_mode_select');
-        
-        // Reset Area and Property selectors
-        areaSelect.innerHTML = '<option value="">-- Choose Area --</option>';
-        areaSelect.disabled = true;
-        areaSelect.classList.add('opacity-60');
-        
-        resetPropertySelector();
-        resetUnitSelector();
-        
+        resetSelect('area_id', '-- Choose Area --');
+        resetSelect('property_id', '-- Choose Property --');
+        resetSelect('unit_id', '-- Choose Unit --');
+
         if (!cityId) {
             setLabelDisabled('area-select-label', true);
             setRadioValue('area_mode', 'new');
@@ -671,34 +766,36 @@
             return;
         }
 
-        // Enable Area Select Mode Option
-        setLabelDisabled('area-select-label', false);
-        setRadioValue('area_mode', 'select');
-        toggleAreaMode('select');
+        const matchedAreas = rawAreas.filter((area) => asId(area.city_id) === asId(cityId));
 
-        // Filter and compile areas matching city ID
-        const matchedAreas = rawAreas.filter(a => a.city_id === cityId);
-        if (matchedAreas.length > 0) {
-            matchedAreas.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a.id;
-                opt.textContent = a.name;
-                areaSelect.appendChild(opt);
-            });
-            areaSelect.disabled = false;
-            areaSelect.classList.remove('opacity-60');
-        } else {
-            // Force new area mode if none found
+        if (matchedAreas.length === 0) {
+            setLabelDisabled('area-select-label', true);
             setRadioValue('area_mode', 'new');
             toggleAreaMode('new');
+            return;
         }
-        checkStep1Validation();
+
+        const areaSelect = byId('area_id');
+        matchedAreas.forEach((area) => {
+            const option = document.createElement('option');
+            option.value = asId(area.id);
+            option.textContent = area.name || 'Unnamed Area';
+            areaSelect.appendChild(option);
+        });
+
+        setSelectEnabled(areaSelect, true);
+        setLabelDisabled('area-select-label', false);
+        setRadioValue('area_mode', 'select');
+        setWrapperState('area-select-wrapper', true);
+        setWrapperState('area-new-wrapper', false);
+        setLabelDisabled('prop-select-label', true);
+        setLabelDisabled('unit-select-label', true);
+        updateAllValidation();
     }
 
     function onAreaChanged(areaId) {
-        const propSelect = document.getElementById('property_id');
-        resetPropertySelector();
-        resetUnitSelector();
+        resetSelect('property_id', '-- Choose Property --');
+        resetSelect('unit_id', '-- Choose Unit --');
 
         if (!areaId) {
             setLabelDisabled('prop-select-label', true);
@@ -707,33 +804,39 @@
             return;
         }
 
-        setLabelDisabled('prop-select-label', false);
-        setRadioValue('property_mode', 'select');
-        togglePropMode('select');
+        const cityId = byId('city_id')?.value || '';
+        const matchedProperties = rawProperties.filter((property) =>
+            asId(property.city_id) === asId(cityId) &&
+            asId(property.area_id) === asId(areaId)
+        );
 
-        // Filter properties matching City and Area
-        const cityId = document.getElementById('city_id').value;
-        const matchedProps = rawProperties.filter(p => p.city_id === cityId && p.area_id === areaId);
-        
-        if (matchedProps.length > 0) {
-            matchedProps.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.id;
-                opt.textContent = p.name + ` (${p.property_type})`;
-                propSelect.appendChild(opt);
-            });
-            propSelect.disabled = false;
-            propSelect.classList.remove('opacity-60');
-        } else {
+        if (matchedProperties.length === 0) {
+            setLabelDisabled('prop-select-label', true);
             setRadioValue('property_mode', 'new');
             togglePropMode('new');
+            return;
         }
-        checkStep1Validation();
+
+        const propertySelect = byId('property_id');
+        matchedProperties.forEach((property) => {
+            const option = document.createElement('option');
+            option.value = asId(property.id);
+            option.textContent = `${property.name || 'Unnamed Property'} (${property.property_type || 'Other'})`;
+            propertySelect.appendChild(option);
+        });
+
+        setSelectEnabled(propertySelect, true);
+        setLabelDisabled('prop-select-label', false);
+        setRadioValue('property_mode', 'select');
+        setWrapperState('property-select-wrapper', true);
+        setWrapperState('property-new-wrapper', false);
+        setLabelDisabled('unit-select-label', true);
+        updateAllValidation();
     }
 
     function onPropertyChanged(propertyId) {
-        resetUnitSelector();
-        checkStep1Validation();
+        resetSelect('unit_id', '-- Choose Unit --');
+        validateStep1();
 
         if (!propertyId) {
             setLabelDisabled('unit-select-label', true);
@@ -742,159 +845,134 @@
             return;
         }
 
-        setLabelDisabled('unit-select-label', false);
-        setRadioValue('unit_mode', 'select');
-        toggleUnitMode('select');
-
-        // Render matching unit selectors
-        const unitSelect = document.getElementById('unit_id');
-        const matchedUnits = rawUnits.filter(u => u.property_id === propertyId);
-        
-        if (matchedUnits.length > 0) {
-            matchedUnits.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u.id;
-                opt.textContent = `${u.name} [Type: ${u.unit_type}] - Status: ${u.status} - (₨ ${u.rent_amount.toLocaleString()}/mo)`;
-                unitSelect.appendChild(opt);
+        const matchedUnits = rawUnits
+            .filter((unit) => asId(unit.property_id) === asId(propertyId))
+            .sort((left, right) => {
+                const orderDifference = asNumber(left.sort_order) - asNumber(right.sort_order);
+                if (orderDifference !== 0) return orderDifference;
+                return String(left.name || '').localeCompare(String(right.name || ''), undefined, { numeric: true });
             });
-        } else {
+
+        if (matchedUnits.length === 0) {
+            setLabelDisabled('unit-select-label', true);
             setRadioValue('unit_mode', 'new');
             toggleUnitMode('new');
+            return;
         }
+
+        const unitSelect = byId('unit_id');
+        matchedUnits.forEach((unit) => {
+            const option = document.createElement('option');
+            option.value = asId(unit.id);
+            option.textContent = `${unit.name || 'Unnamed Unit'} [${unit.unit_type || 'Unit'}] — ${unit.status || 'Unknown'} — ₨ ${formatMoney(unit.rent_amount)}/mo`;
+            unitSelect.appendChild(option);
+        });
+
+        setSelectEnabled(unitSelect, true);
+        setLabelDisabled('unit-select-label', false);
+        setRadioValue('unit_mode', 'select');
+        setWrapperState('unit-select-wrapper', true);
+        setWrapperState('unit-new-wrapper', false);
+        validateStep2();
     }
 
     function onUnitChanged(unitId) {
-        checkStep2Validation();
+        validateStep2();
         if (!unitId) return;
 
-        // Auto-extract monthly rent from unit record to agreement rent inputs
-        const unit = rawUnits.find(u => u.id === unitId);
-        if (unit) {
-            document.getElementById('agreement_monthly_rent').value = unit.rent_amount;
+        const unit = rawUnits.find((item) => asId(item.id) === asId(unitId));
+        if (!unit) return;
+
+        byId('agreement_monthly_rent').value = asNumber(unit.rent_amount) || '';
+        if (asNumber(unit.advance_amount) > 0) {
+            byId('agreement_advance_amount').value = asNumber(unit.advance_amount);
         }
     }
 
-    function syncRentInput(val) {
-        document.getElementById('agreement_monthly_rent').value = val;
+    function syncRentInput(value) {
+        byId('agreement_monthly_rent').value = value;
     }
 
-    // Tenant check triggers
-    function onTenantChanged(tenantId) {
-        checkStep3Validation();
+    function onTenantChanged() {
+        validateStep3();
     }
 
     function onTenantNewFieldsChanged() {
-        checkStep3Validation();
+        validateStep3();
     }
 
-    // Step-by-Step interactive validations and visual triggers
-    function checkStep1Validation() {
-        const nextBtn = document.getElementById('step-1-next');
-        const cityMode = getRadioValue('city_mode');
-        const areaMode = getRadioValue('area_mode');
-        const propMode = getRadioValue('property_mode');
-        
-        let isValid = true;
-
-        if (cityMode === 'select' && !document.getElementById('city_id').value) isValid = false;
-        if (cityMode === 'new' && !document.getElementById('new_city_name').value.trim()) isValid = false;
-
-        if (areaMode === 'select' && !document.getElementById('area_id').value) isValid = false;
-        if (areaMode === 'new' && !document.getElementById('new_area_name').value.trim()) isValid = false;
-
-        if (propMode === 'select' && !document.getElementById('property_id').value) isValid = false;
-        if (propMode === 'new' && !document.getElementById('new_property_name').value.trim()) isValid = false;
-
-        nextBtn.disabled = !isValid;
-    }
-
-    function checkStep2Validation() {
-        const nextBtn = document.getElementById('step-2-next');
-        const unitMode = getRadioValue('unit_mode');
-        
-        let isValid = true;
-        if (unitMode === 'select' && !document.getElementById('unit_id').value) isValid = false;
-        if (unitMode === 'new' && !document.getElementById('new_unit_name').value.trim()) isValid = false;
-
-        nextBtn.disabled = !isValid;
-    }
-
-    function checkStep3Validation() {
-        const nextBtn = document.getElementById('step-3-next');
-        const tenantMode = getRadioValue('tenant_mode');
-        
-        let isValid = true;
-        if (tenantMode === 'select' && !document.getElementById('tenant_id').value) isValid = false;
-        if (tenantMode === 'new') {
-            const name = document.getElementById('new_tenant_name').value.trim();
-            const phone = document.getElementById('new_tenant_phone').value.trim();
-            if (!name || !phone) isValid = false;
-        }
-
-        nextBtn.disabled = !isValid;
-    }
-
-    // Helpers
-    function setRadioValue(name, value) {
-        const radios = document.getElementsByName(name);
-        for (let r of radios) {
-            if (r.value === value) {
-                r.checked = true;
-                break;
-            }
-        }
-    }
-
-    function getRadioValue(name) {
-        const radios = document.getElementsByName(name);
-        for (let r of radios) {
-            if (r.checked) return r.value;
-        }
-        return '';
-    }
-
-    function setLabelDisabled(labelId, isDisabled) {
-        const label = document.getElementById(labelId);
-        if (!label) return;
-        if (isDisabled) {
-            label.classList.add('opacity-50', 'pointer-events-none');
-            label.querySelector('input').disabled = true;
-        } else {
-            label.classList.remove('opacity-50', 'pointer-events-none');
-            label.querySelector('input').disabled = false;
-        }
-    }
-
-    function resetPropertySelector() {
-        const propSelect = document.getElementById('property_id');
-        propSelect.innerHTML = '<option value="">-- Choose Property --</option>';
-        propSelect.disabled = true;
-        propSelect.classList.add('opacity-60');
-    }
-
-    function resetUnitSelector() {
-        const unitSelect = document.getElementById('unit_id');
-        unitSelect.innerHTML = '<option value="">-- Choose Unit --</option>';
-    }
-
-    // Setup Event listeners to instantly update validations on field revisions
     document.addEventListener('DOMContentLoaded', () => {
-        // Step 1 inputs
-        document.getElementById('city_id').addEventListener('change', checkStep1Validation);
-        document.getElementById('new_city_name').addEventListener('input', checkStep1Validation);
-        document.getElementById('area_id').addEventListener('change', checkStep1Validation);
-        document.getElementById('new_area_name').addEventListener('input', checkStep1Validation);
-        document.getElementById('property_id').addEventListener('change', checkStep1Validation);
-        document.getElementById('new_property_name').addEventListener('input', checkStep1Validation);
+        const listeners = [
+            ['new_city_name', 'input', validateStep1],
+            ['new_area_name', 'input', validateStep1],
+            ['new_property_name', 'input', validateStep1],
+            ['new_unit_name', 'input', validateStep2],
+            ['new_tenant_name', 'input', validateStep3],
+            ['new_tenant_phone', 'input', validateStep3]
+        ];
 
-        // Step 2 inputs
-        document.getElementById('unit_id').addEventListener('change', checkStep2Validation);
-        document.getElementById('new_unit_name').addEventListener('input', checkStep2Validation);
+        listeners.forEach(([id, eventName, handler]) => {
+            byId(id)?.addEventListener(eventName, handler);
+        });
 
-        // Intial runs
-        checkStep1Validation();
-        checkStep2Validation();
-        checkStep3Validation();
+        const form = byId('smart-entry-form');
+        form?.addEventListener('submit', (event) => {
+            if (isSubmitting) {
+                event.preventDefault();
+                return;
+            }
+
+            if (!validateStep1()) {
+                event.preventDefault();
+                goToStep(1);
+                return;
+            }
+
+            if (!validateStep2()) {
+                event.preventDefault();
+                goToStep(2);
+                return;
+            }
+
+            if (!validateStep3()) {
+                event.preventDefault();
+                goToStep(3);
+                return;
+            }
+
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                form.reportValidity();
+                return;
+            }
+
+            isSubmitting = true;
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'Saving Smart Record...';
+            }
+        });
+
+        setWrapperState('city-select-wrapper', true);
+        setWrapperState('city-new-wrapper', false);
+        setWrapperState('area-select-wrapper', true);
+        setWrapperState('area-new-wrapper', false);
+        setWrapperState('property-select-wrapper', true);
+        setWrapperState('property-new-wrapper', false);
+        setWrapperState('unit-select-wrapper', true);
+        setWrapperState('unit-new-wrapper', false);
+        setWrapperState('tenant-select-wrapper', true);
+        setWrapperState('tenant-new-wrapper', false);
+
+        setLabelDisabled('area-select-label', true);
+        setLabelDisabled('prop-select-label', true);
+        setLabelDisabled('unit-select-label', true);
+        resetSelect('area_id', '-- Choose Area --');
+        resetSelect('property_id', '-- Choose Property --');
+        resetSelect('unit_id', '-- Choose Unit --');
+
+        updateAllValidation();
     });
 </script>
 

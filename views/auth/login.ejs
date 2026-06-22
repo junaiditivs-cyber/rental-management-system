@@ -1,215 +1,222 @@
+
 <!doctype html>
 <html lang="en" class="h-full">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - PK Rental Management</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PK Rentals</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background:
-                radial-gradient(circle at top left, rgba(59, 130, 246, 0.22), transparent 35%),
-                radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.14), transparent 32%),
-                #050505;
-        }
-
-        .glass-card {
-            background: rgba(17, 17, 17, 0.78);
-            border: 1px solid rgba(255, 255, 255, 0.10);
-            backdrop-filter: blur(18px);
-            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
-        }
-
-        .input-box {
-            background: rgba(10, 10, 10, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.10);
-            color: #ffffff;
-        }
-
-        .input-box:focus {
-            outline: none;
-            border-color: rgba(59, 130, 246, 0.95);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
         }
     </style>
 </head>
 
-<body class="min-h-screen text-zinc-200 antialiased">
+<body class="min-h-screen bg-[#080A0F] text-white antialiased">
 
-    <main class="min-h-screen flex items-center justify-center px-4 py-8">
+    <main class="min-h-screen flex items-center justify-center px-4">
 
-        <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+        <div class="w-full max-w-sm">
 
-            <!-- Left Side Branding -->
-            <section class="hidden lg:block">
-                <div class="max-w-xl">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-zinc-300 mb-8">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        Secure Rental Management System
-                    </div>
-
-                    <h1 class="text-5xl font-black text-white leading-tight tracking-tight">
-                        PK Rentals Management Portal
-                    </h1>
-
-                    <p class="mt-5 text-zinc-400 text-base leading-7">
-                        Manage cities, areas, properties, units, tenants, rent collection, advance payments, agreements and reports from one secure dashboard.
-                    </p>
-
-                    <div class="grid grid-cols-3 gap-4 mt-10">
-                        <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
-                            <div class="text-2xl font-black text-white">01</div>
-                            <div class="text-[11px] text-zinc-500 mt-1 uppercase tracking-wider">Properties</div>
-                        </div>
-
-                        <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
-                            <div class="text-2xl font-black text-white">02</div>
-                            <div class="text-[11px] text-zinc-500 mt-1 uppercase tracking-wider">Tenants</div>
-                        </div>
-
-                        <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
-                            <div class="text-2xl font-black text-white">03</div>
-                            <div class="text-[11px] text-zinc-500 mt-1 uppercase tracking-wider">Reports</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Login Card -->
-            <section class="w-full max-w-md mx-auto">
-
-                <div class="text-center mb-7">
-                    <div class="mx-auto w-16 h-16 rounded-2xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-300 text-2xl font-black mb-4">
-                        PK
-                    </div>
-
-                    <h2 class="text-3xl font-black text-white tracking-tight">
-                        Welcome Back
-                    </h2>
-
-                    <p class="text-zinc-500 text-sm mt-2">
-                        Login to access your dashboard.
-                    </p>
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-blue-600 flex items-center justify-center text-lg font-extrabold shadow-lg shadow-blue-950/40">
+                    PK
                 </div>
 
-                <div class="glass-card rounded-3xl p-7">
+                <h1 class="mt-4 text-2xl font-extrabold tracking-tight">
+                    PK Rentals
+                </h1>
+            </div>
 
-                    <% if (typeof error_msg !== 'undefined' && error_msg) { %>
-                        <div class="mb-5 rounded-2xl border border-red-500/25 bg-red-950/35 px-4 py-3 text-red-300">
-                            <div class="text-sm font-bold">Login Failed</div>
-                            <div class="text-xs mt-1"><%= error_msg %></div>
-                        </div>
-                    <% } %>
+            <div class="rounded-2xl border border-slate-800 bg-[#10141D] p-6 shadow-2xl">
 
-                    <form action="/login" method="POST" class="space-y-5">
+                <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+                    <div class="mb-5 rounded-xl border border-red-500/25 bg-red-950/30 px-4 py-3 text-xs text-red-300">
+                        <%= error_msg %>
+                    </div>
+                <% } %>
 
-                        <div>
-                            <label for="username" class="block text-[11px] font-black text-zinc-400 uppercase tracking-[0.18em] mb-2">
-                                Username
-                            </label>
+                <form
+                    id="login-form"
+                    action="/login"
+                    method="POST"
+                    class="space-y-4"
+                >
+                    <input
+                        type="hidden"
+                        id="username"
+                        name="username"
+                        value=""
+                    >
+
+                    <div>
+                        <label
+                            for="username-local"
+                            class="block mb-2 text-xs font-semibold text-slate-400"
+                        >
+                            Gmail Address
+                        </label>
+
+                        <div class="flex overflow-hidden rounded-xl border border-slate-700 bg-[#080A0F] focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15">
 
                             <input
                                 type="text"
-                                id="username"
-                                name="username"
+                                id="username-local"
                                 required
                                 autocomplete="username"
-                                placeholder="Enter username"
-                                class="input-box w-full px-4 py-3 rounded-2xl text-sm placeholder-zinc-600 transition-all"
-                            />
-                        </div>
+                                placeholder="admin"
+                                class="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600"
+                            >
 
-                        <div>
-                            <label for="password" class="block text-[11px] font-black text-zinc-400 uppercase tracking-[0.18em] mb-2">
-                                Password
-                            </label>
-
-                            <div class="relative">
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    required
-                                    autocomplete="current-password"
-                                    placeholder="Enter password"
-                                    class="input-box w-full px-4 py-3 pr-16 rounded-2xl text-sm placeholder-zinc-600 transition-all"
-                                />
-
-                                <button
-                                    type="button"
-                                    id="togglePasswordBtn"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-zinc-500 hover:text-white px-2 py-1 rounded-lg hover:bg-white/5 transition-all"
-                                >
-                                    Show
-                                </button>
+                            <div class="flex items-center border-l border-slate-700 bg-slate-900 px-3 text-xs font-semibold text-slate-400 select-none">
+                                @gmail.com
                             </div>
                         </div>
+                    </div>
 
-                        <button
-                            type="submit"
-                            class="w-full py-3.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-sm font-black transition-all active:scale-[0.98]"
+                    <div>
+                        <label
+                            for="password"
+                            class="block mb-2 text-xs font-semibold text-slate-400"
                         >
-                            Login to Dashboard
-                        </button>
-                    </form>
+                            Password
+                        </label>
 
-                    <div class="mt-6 pt-5 border-t border-white/10 flex items-center justify-between">
-                        <div>
-                            <p class="text-[11px] text-zinc-500">Protected Access</p>
-                            <p class="text-xs text-zinc-300 font-semibold mt-0.5">Authorized users only</p>
-                        </div>
+                        <div class="relative">
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                                placeholder="Enter password"
+                                class="w-full rounded-xl border border-slate-700 bg-[#080A0F] px-4 py-3 pr-16 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/15"
+                            >
 
-                        <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-300 font-bold">
-                            ✓
+                            <button
+                                type="button"
+                                id="toggle-password"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-[11px] font-semibold text-slate-500 hover:bg-white/5 hover:text-white"
+                            >
+                                Show
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                <p class="text-center text-[11px] text-zinc-600 mt-6">
-                    © <%= new Date().getFullYear() %> PK Rentals. All rights reserved.
-                </p>
+                    <button
+                        id="login-button"
+                        type="submit"
+                        class="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-500 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        Login
+                    </button>
+                </form>
 
-            </section>
+            </div>
+
         </div>
 
     </main>
 
     <script>
-        const passwordInput = document.getElementById('password');
-        const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('login-form');
+            const localInput = document.getElementById('username-local');
+            const hiddenUsername = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const togglePassword = document.getElementById('toggle-password');
+            const loginButton = document.getElementById('login-button');
 
-        if (passwordInput && togglePasswordBtn) {
-            togglePasswordBtn.addEventListener('click', function () {
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    togglePasswordBtn.textContent = 'Hide';
-                } else {
-                    passwordInput.type = 'password';
-                    togglePasswordBtn.textContent = 'Show';
+            if (
+                !form ||
+                !localInput ||
+                !hiddenUsername ||
+                !passwordInput ||
+                !loginButton
+            ) {
+                return;
+            }
+
+            localInput.addEventListener('input', function () {
+                let value = String(localInput.value || '')
+                    .trim()
+                    .toLowerCase();
+
+                if (value.includes('@')) {
+                    value = value.split('@')[0];
                 }
+
+                value = value.replace(/[^a-z0-9._%+-]/g, '');
+                localInput.value = value;
             });
-        }
+
+            if (togglePassword) {
+                togglePassword.addEventListener('click', function () {
+                    const isHidden = passwordInput.type === 'password';
+
+                    passwordInput.type = isHidden ? 'text' : 'password';
+                    togglePassword.textContent = isHidden ? 'Hide' : 'Show';
+                });
+            }
+
+            form.addEventListener('submit', function (event) {
+                const localPart = String(localInput.value || '')
+                    .trim()
+                    .toLowerCase()
+                    .replace(/@gmail\.com$/i, '')
+                    .split('@')[0];
+
+                if (!localPart) {
+                    event.preventDefault();
+                    localInput.setCustomValidity('Please enter your Gmail username.');
+                    localInput.reportValidity();
+                    localInput.focus();
+                    return;
+                }
+
+                localInput.setCustomValidity('');
+                hiddenUsername.value = localPart + '@gmail.com';
+
+                loginButton.disabled = true;
+                loginButton.innerHTML = `
+                    <span class="inline-flex items-center justify-center gap-2">
+                        <svg
+                            class="h-4 w-4 animate-spin"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            aria-hidden="true"
+                        >
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4"
+                            ></circle>
+
+                            <path
+                                class="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            ></path>
+                        </svg>
+
+                        Logging in...
+                    </span>
+                `;
+            });
+        });
     </script>
 
 </body>
 </html>
+```

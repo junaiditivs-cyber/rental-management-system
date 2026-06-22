@@ -1,76 +1,97 @@
 <!doctype html>
-<html lang="en" class="h-full bg-[#0A0A0A]">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><%= typeof title !== 'undefined' ? title : "PK Rentals - Rental Management System" %></title>
-    <!-- Resource Hints for Faster Resource Loading -->
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://cdn.tailwindcss.com" />
-    
-    <!-- Stable & Optimized Tailwind CSS CDN (Instant Compile, No WASM Lag) -->
+
+    <script>
+        (function () {
+            let theme = 'dark';
+
+            try {
+                theme = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
+            } catch (error) {}
+
+            const root = document.documentElement;
+            root.classList.toggle('light', theme === 'light');
+            root.dataset.theme = theme;
+            root.style.colorScheme = theme;
+        })();
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Optional Tailwind CSS Configuration to customize theme styles just in case
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        mono: ['JetBrains Mono', 'monospace']
                     }
                 }
             }
-        }
+        };
     </script>
-    <script>
-        // High-performance Instant Theme Preloader to prevent any white/dark flash
-        (function() {
-            try {
-                const savedTheme = localStorage.getItem('theme');
-                if (savedTheme === 'light') {
-                    document.documentElement.classList.add('light');
-                } else {
-                    document.documentElement.classList.remove('light');
-                }
-            } catch (e) {}
-        })();
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;550&display=swap" rel="stylesheet" />
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;550&display=swap"
+        rel="stylesheet"
+    />
+
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #0A0A0A;
-            color: #D4D4D8;
+        :root {
+            color-scheme: dark;
         }
+
+        html {
+            background: #0a0a0a;
+        }
+
+        html.light {
+            color-scheme: light;
+            background: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #d4d4d8;
+        }
+
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
-        /* Custom scrollbar for modern visual sleekness */
+
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
+
         ::-webkit-scrollbar-track {
             background: #111111;
         }
+
         ::-webkit-scrollbar-thumb {
-            background: #262626;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3F3F46;
+            background: #3f3f46;
+            border-radius: 999px;
         }
 
-        /* -----------------------------------------
-           RESPONSIVE MOBILE TABLES CARDS & SCROLLBARS
-           ----------------------------------------- */
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b;
+        }
+
         @media (max-width: 1024px) {
             div:has(> table) {
                 overflow-x: auto !important;
                 -webkit-overflow-scrolling: touch;
             }
+
             table {
                 min-width: 750px !important;
             }
@@ -87,250 +108,361 @@
                 align-items: flex-start !important;
                 gap: 0.75rem !important;
             }
+
             header > div {
                 width: 100% !important;
             }
+
             header .flex {
                 flex-wrap: wrap !important;
                 gap: 0.5rem !important;
                 width: 100% !important;
             }
-            header .w-px, header div.w-px {
+
+            header .w-px,
+            header div.w-px {
                 display: none !important;
             }
-            .p-8, .p-6 {
+
+            .p-8,
+            .p-6 {
                 padding: 1.25rem !important;
             }
-            .space-y-8 > :not([hidden]) ~ :not([hidden]) {
-                --tw-space-y-reverse: 0;
-                margin-top: 1.25rem !important;
-                margin-bottom: 1.25rem !important;
-            }
         }
 
-        /* -----------------------------------------
-           LIGHT MODE OVERRIDES AND COMPATIBILITY
-           ----------------------------------------- */
-        html.light, html.light body {
-            background-color: #F8FAFC !important;
-            color: #1E293B !important;
-        }
-        html.light #app-container {
-            background-color: #F8FAFC !important;
+        /* =========================
+           COMPLETE LIGHT MODE
+           ========================= */
+
+        html.light body,
+        html.light #app-container,
+        html.light .theme-page {
+            background: #f8fafc !important;
+            color: #1e293b !important;
         }
 
-        /* Sidebar Overrides */
-        html.light aside {
-            background-color: #FFFFFF !important;
-            border-right: 1px solid #E2E8F0 !important;
-        }
-        html.light aside div, html.light aside nav {
-            border-color: #E2E8F0 !important;
-        }
-        html.light aside a {
-            color: #475569 !important;
-        }
-        html.light aside a:hover {
-            color: #0F172A !important;
-            background-color: #F1F5F9 !important;
-            border-color: #E2E8F0 !important;
-        }
-        /* Active nav item */
-        html.light aside a.bg-\[\#161616\] {
-            background-color: #F1F5F9 !important;
-            color: #0F172A !important;
-            border-color: #CBD5E1 !important;
-        }
-        html.light aside span.text-zinc-400 {
-            color: #475569 !important;
-        }
-        html.light aside span.text-zinc-500 {
-            color: #64748B !important;
-        }
-        html.light aside a span.text-blue-400 {
-            color: #2563EB !important;
-        }
-        html.light aside .bg-\[\#0E0E0E\] {
-            background-color: #F8FAFC !important;
-            border-top-color: #E2E8F0 !important;
-        }
-        html.light aside .text-white {
-            color: #0F172A !important;
-        }
-        html.light aside button#theme-toggle {
-            color: #475569 !important;
-        }
-        html.light aside button#theme-toggle:hover {
-            background-color: #F1F5F9 !important;
-            color: #0F172A !important;
+        html.light ::-webkit-scrollbar-track {
+            background: #eef2f7;
         }
 
-        /* Mobile top bar overrides */
+        html.light ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+        }
+
+        html.light ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Neutral custom backgrounds used across all pages */
+        html.light .bg-\[\#070A10\],
+        html.light .bg-\[\#080A0F\],
+        html.light .bg-\[\#090C12\],
+        html.light .bg-\[\#0A0A0A\],
+        html.light .bg-\[\#0B0E14\],
+        html.light .bg-\[\#0E0E0E\],
+        html.light .bg-\[\#10141D\],
+        html.light .bg-\[\#111111\],
+        html.light .bg-\[\#141414\],
+        html.light .bg-\[\#161616\],
+        html.light .bg-\[\#1A1A1A\],
+        html.light .bg-\[\#1A1A1C\],
+        html.light .bg-\[\#1C1C1E\],
+        html.light .theme-card,
+        html.light .theme-card-muted,
+        html.light .theme-topbar {
+            background-color: #ffffff !important;
+        }
+
+        html.light .theme-card-muted,
+        html.light .bg-\[\#161616\],
+        html.light .bg-\[\#1A1A1A\],
+        html.light .bg-\[\#1A1A1C\],
+        html.light .bg-\[\#1C1C1E\] {
+            background-color: #f8fafc !important;
+        }
+
+        html.light .bg-slate-950,
+        html.light .bg-slate-900 {
+            background-color: #f1f5f9 !important;
+        }
+
+        html.light .bg-slate-900\/50,
+        html.light .hover\:bg-slate-900\/50:hover {
+            background-color: rgba(241, 245, 249, 0.75) !important;
+        }
+
+        html.light .bg-black {
+            background-color: #f8fafc !important;
+        }
+
+        /* Main headers and surfaces */
+        html.light header,
+        html.light .theme-topbar {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        html.light .theme-card {
+            border-color: #dbe4ee !important;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06) !important;
+        }
+
+        html.light .theme-card-muted {
+            border-color: #e2e8f0 !important;
+        }
+
+        /* Sidebar */
+        html.light #sidebar-container,
+        html.light .theme-sidebar,
         html.light #mobile-top-bar {
-            background-color: #FFFFFF !important;
-            border-color: #E2E8F0 !important;
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
         }
-        html.light #mobile-top-bar button {
+
+        html.light #sidebar-container > div,
+        html.light #sidebar-container nav {
+            border-color: #e2e8f0 !important;
+        }
+
+        html.light #sidebar-container .sidebar-nav-inactive {
             color: #475569 !important;
         }
-        html.light #mobile-top-bar div {
-            color: #0F172A !important;
+
+        html.light #sidebar-container .sidebar-nav-inactive:hover {
+            color: #0f172a !important;
+            background-color: #f1f5f9 !important;
+            border-color: #dbe4ee !important;
         }
 
-        /* Main Headers */
-        html.light header {
-            background-color: #FFFFFF !important;
-            border-bottom: 1px solid #E2E8F0 !important;
-        }
-        html.light header span.text-zinc-200 {
-            color: #0F172A !important;
-        }
-        html.light header span.text-zinc-500 {
-            color: #64748B !important;
+        html.light #sidebar-container .sidebar-nav-active {
+            color: #1d4ed8 !important;
+            background-color: #dbeafe !important;
+            border-color: #93c5fd !important;
+            box-shadow: none !important;
         }
 
-        /* Dashboard & Common Cards */
-        html.light .bg-\[\#111111\] {
-            background-color: #FFFFFF !important;
-            border-color: #E2E8F0 !important;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
-        }
-        html.light .bg-\[\#161616\] {
-            background-color: #F8FAFC !important;
-            border-color: #E2E8F0 !important;
-        }
-        /* Borders of items */
-        html.light .border-\[\#1F1F1F\], 
-        html.light .border-\[\#262626\],
-        html.light .border-zinc-800,
-        html.light .border-zinc-900 {
-            border-color: #E2E8F0 !important;
-        }
-        html.light .divide-\[\#1F1F1F\] > * {
-            border-color: #E2E8F0 !important;
-        }
-        html.light .divide-zinc-800 > * {
-            border-color: #E2E8F0 !important;
+        html.light #sidebar-container .bg-white\/\[0\.045\],
+        html.light #sidebar-container .bg-white\/\[0\.04\],
+        html.light #sidebar-container .hover\:bg-white\/\[0\.08\]:hover,
+        html.light #theme-toggle {
+            background-color: #f8fafc !important;
+            border-color: #dbe4ee !important;
         }
 
-        /* Text states */
-        html.light .text-white {
-            color: #0F172A !important;
+        html.light #theme-toggle {
+            color: #475569 !important;
         }
-        html.light .text-zinc-100 {
-            color: #1E293B !important;
+
+        html.light #theme-toggle:hover {
+            background-color: #eef2ff !important;
+            color: #1d4ed8 !important;
         }
-        html.light .text-zinc-200 {
+
+        html.light #sidebar-overlay {
+            background-color: rgba(15, 23, 42, 0.45) !important;
+        }
+
+        /* Text */
+        html.light .text-white,
+        html.light .text-zinc-100,
+        html.light .text-slate-100 {
+            color: #0f172a !important;
+        }
+
+        html.light .text-zinc-200,
+        html.light .text-slate-200 {
+            color: #1e293b !important;
+        }
+
+        html.light .text-zinc-300,
+        html.light .text-slate-300 {
             color: #334155 !important;
         }
-        html.light .text-zinc-300 {
+
+        html.light .text-zinc-400,
+        html.light .text-slate-400 {
             color: #475569 !important;
         }
-        html.light .text-zinc-400 {
-            color: #64748B !important;
-        }
-        html.light .text-zinc-500 {
-            color: #94A3B8 !important;
-        }
-        html.light .hover\:text-white:hover {
-            color: #0F172A !important;
-        }
-        html.light .hover\:bg-\[\#161616\]\/20:hover {
-            background-color: rgba(241, 245, 249, 0.6) !important;
+
+        html.light .text-zinc-500,
+        html.light .text-slate-500 {
+            color: #64748b !important;
         }
 
-        /* Forms, inputs, selectors */
+        html.light .text-slate-600 {
+            color: #475569 !important;
+        }
+
+        html.light .text-slate-700 {
+            color: #64748b !important;
+        }
+
+        html.light .hover\:text-white:hover {
+            color: #0f172a !important;
+        }
+
+        html.light .dashboard-greeting-title {
+            background: none !important;
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+
+        html.light .dashboard-greeting-name {
+            background: none !important;
+            color: #2563eb !important;
+            -webkit-text-fill-color: #2563eb !important;
+        }
+
+        /* Borders and separators */
+        html.light .border-\[\#1F1F1F\],
+        html.light .border-\[\#262626\],
+        html.light .border-zinc-700,
+        html.light .border-zinc-800,
+        html.light .border-zinc-900,
+        html.light .border-slate-700,
+        html.light .border-slate-800,
+        html.light .border-slate-800\/80,
+        html.light .border-white\/10 {
+            border-color: #e2e8f0 !important;
+        }
+
+        html.light .divide-\[\#1F1F1F\] > :not([hidden]) ~ :not([hidden]),
+        html.light .divide-zinc-800 > :not([hidden]) ~ :not([hidden]),
+        html.light .divide-slate-800 > :not([hidden]) ~ :not([hidden]) {
+            border-color: #e2e8f0 !important;
+        }
+
+        /* Inputs */
         html.light input,
         html.light select,
         html.light textarea {
-            background-color: #FFFFFF !important;
-            border: 1px solid #CBD5E1 !important;
-            color: #0F172A !important;
+            background-color: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #0f172a !important;
         }
+
+        html.light input::placeholder,
+        html.light textarea::placeholder {
+            color: #94a3b8 !important;
+        }
+
         html.light input:focus,
         html.light select:focus,
         html.light textarea:focus {
-            border-color: #3B82F6 !important;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1) !important;
-        }
-        html.light input[readonly] {
-            background-color: #F1F5F9 !important;
-            border-color: #E2E8F0 !important;
-            color: #64748B !important;
-        }
-        html.light select:disabled {
-            background-color: #F1F5F9 !important;
-            border-color: #E2E8F0 !important;
-            color: #64748B !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
         }
 
-        /* Custom Badges / Boxes */
-        html.light .bg-zinc-900 {
-            background-color: #F1F5F9 !important;
-            border-color: #CBD5E1 !important;
-        }
-        html.light .bg-zinc-950 {
-            background-color: #F8FAFC !important;
-            border-color: #CBD5E1 !important;
-        }
-        html.light .bg-\[\#0A0A0A\], html.light .bg-black {
-            background-color: #F8FAFC !important;
-        }
-        html.light .bg-\[\#1A1A1A\] {
-            background-color: #F1F5F9 !important;
-            color: #0F172A !important;
-        }
-        html.light .bg-\[\#1C1C1E\] {
-            background-color: #F1F5F9 !important;
-            border-color: #E2E8F0 !important;
-            color: #475569 !important;
-        }
-        html.light .bg-\[\#1C1C1E\]:hover {
-            background-color: #E2E8F0 !important;
-            color: #0F172A !important;
+        html.light input[readonly],
+        html.light select:disabled,
+        html.light textarea:disabled {
+            background-color: #f1f5f9 !important;
+            color: #64748b !important;
         }
 
-        /* Table header cells */
+        /* Neutral buttons */
+        html.light .theme-secondary-button {
+            background-color: #ffffff !important;
+            border-color: #cbd5e1 !important;
+            color: #334155 !important;
+        }
+
+        html.light .theme-secondary-button:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+        html.light .theme-inverse-button {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+        }
+
+        html.light .hover\:bg-slate-800:hover {
+            background-color: #e2e8f0 !important;
+        }
+
+        html.light .theme-row:hover {
+            background-color: #f8fafc !important;
+        }
+
+        /* Tables */
+        html.light thead,
+        html.light thead tr,
         html.light thead tr.bg-\[\#161616\] {
-            background-color: #F1F5F9 !important;
-            color: #475569 !important;
+            background-color: #f1f5f9 !important;
         }
+
         html.light thead th {
             color: #475569 !important;
-            font-weight: 600 !important;
         }
 
-        /* Alerts */
-        html.light .bg-red-950\/30 {
-            background-color: #FEF2F2 !important;
-            border-color: #FCA5A5 !important;
-            color: #991B1B !important;
+        html.light tbody tr:hover {
+            background-color: rgba(241, 245, 249, 0.7) !important;
         }
-        html.light .bg-emerald-950\/30 {
-            background-color: #ECFDF5 !important;
-            border-color: #6EE7B7 !important;
-            color: #065F46 !important;
-        }
-        html.light .bg-emerald-950\/60 {
-            background-color: #ECFDF5 !important;
-            border-color: #A7F3D0 !important;
-            color: #047857 !important;
-        }
-        html.light .bg-blue-950\/10 {
-            background-color: #EFF6FF !important;
-            border-color: #BFDBFE !important;
-            color: #1E40AF !important;
-        }
-        html.light .text-blue-300 {
-            color: #1D4ED8 !important;
-        }
-        html.light .text-blue-400 {
-            color: #2563EB !important;
 
+        /* Delete modal */
+        html.light #delete-confirm-card,
+        html.light .theme-modal-card {
+            background-color: #ffffff !important;
+            border-color: #dbe4ee !important;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2) !important;
         }
-        
+
+        html.light #delete-confirm-title {
+            color: #0f172a !important;
+        }
+
+        html.light #delete-confirm-message {
+            color: #475569 !important;
+        }
+
+        html.light .theme-modal-cancel {
+            background-color: #f8fafc !important;
+            border-color: #cbd5e1 !important;
+            color: #475569 !important;
+        }
+
+        html.light .theme-modal-cancel:hover {
+            background-color: #f1f5f9 !important;
+            color: #0f172a !important;
+        }
+
+        /* Toasts */
+        html.light #toast-success {
+            background-color: #ecfdf5 !important;
+            border-color: #6ee7b7 !important;
+            color: #065f46 !important;
+        }
+
+        html.light #toast-error {
+            background-color: #fef2f2 !important;
+            border-color: #fca5a5 !important;
+            color: #991b1b !important;
+        }
+
+        /* Keep accent/status colors readable */
+        html.light .text-blue-300 { color: #1d4ed8 !important; }
+        html.light .text-blue-400 { color: #2563eb !important; }
+        html.light .text-emerald-300 { color: #047857 !important; }
+        html.light .text-emerald-400 { color: #059669 !important; }
+        html.light .text-amber-300 { color: #b45309 !important; }
+        html.light .text-amber-400 { color: #d97706 !important; }
+        html.light .text-red-300 { color: #b91c1c !important; }
+        html.light .text-red-400 { color: #dc2626 !important; }
+        html.light .text-violet-300 { color: #7c3aed !important; }
+        html.light .text-violet-400 { color: #7c3aed !important; }
+
+        /* Preserve white text on strongly colored buttons */
+        html.light .bg-blue-600.text-white,
+        html.light .bg-red-600.text-white,
+        html.light .bg-emerald-600.text-white,
+        html.light .bg-amber-600.text-white,
+        html.light .bg-violet-600.text-white,
+        html.light .bg-indigo-600.text-white {
+            color: #ffffff !important;
+        }
     </style>
 </head>
+
 <body class="h-full flex text-zinc-300 antialiased overflow-hidden">
-    <!-- Main Flex Wrapper -->
     <div id="app-container" class="flex flex-col md:flex-row w-full h-full overflow-hidden">

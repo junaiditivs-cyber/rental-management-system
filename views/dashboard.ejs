@@ -23,10 +23,10 @@
     const pendingPercent = expected > 0 ? Math.min(100, Math.round((pending / expected) * 100)) : 0;
 %>
 
-<main class="flex-1 flex flex-col h-full overflow-hidden bg-[#080A0F]">
+<main class="theme-page flex-1 flex flex-col h-full overflow-hidden bg-[#080A0F]">
 
     <!-- Header -->
-    <header class="min-h-16 border-b border-slate-800/80 bg-[#0B0E14] px-6 lg:px-8 py-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shrink-0">
+    <header class="theme-topbar min-h-16 border-b border-slate-800/80 bg-[#0B0E14] px-6 lg:px-8 py-4 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shrink-0">
         <div>
             <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
                 <span>Overview</span>
@@ -47,14 +47,14 @@
             <% } %>
 
             <% if (canAddProperties) { %>
-                <a href="/properties/add" class="inline-flex items-center justify-center px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all active:scale-[0.98]">
+                <a href="/properties/add" class="theme-secondary-button inline-flex items-center justify-center px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all active:scale-[0.98]">
                     + Add Property
                 </a>
             <% } %>
 
             <div class="hidden md:block w-px h-6 bg-slate-800"></div>
 
-            <div class="inline-flex items-center gap-2 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl">
+            <div class="theme-card-muted inline-flex items-center gap-2 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                 <span class="text-[11px] text-slate-400 font-mono">
                     <%= new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %> PKT
@@ -77,7 +77,7 @@
 
         <!-- Executive Summary -->
         <section class="grid grid-cols-1 xl:grid-cols-12 gap-5">
-            <div class="xl:col-span-8 bg-[#10141D] border border-slate-800 rounded-3xl p-6 shadow-sm">
+            <div class="xl:col-span-8 theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-6 shadow-sm">
                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                     <div>
                         <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[11px] text-blue-300 font-bold mb-4">
@@ -86,7 +86,7 @@
                         </div>
 
                         <h2 class="text-2xl lg:text-4xl font-black tracking-tight leading-tight">
-    <span class="block text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 drop-shadow-sm">
+    <span class="dashboard-greeting-title block text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-slate-400 drop-shadow-sm">
         Assalam-o-Alaikum,
     </span>
 
@@ -98,7 +98,7 @@
         <span class="relative inline-flex items-center px-4 py-1.5 rounded-2xl bg-blue-500/10 border border-blue-400/25 shadow-lg shadow-blue-950/30">
             <span class="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-blue-500/20 via-cyan-400/10 to-indigo-500/20 blur opacity-80"></span>
 
-            <span class="relative text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-cyan-200 to-indigo-300 font-black tracking-wide">
+            <span class="dashboard-greeting-name relative text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-cyan-200 to-indigo-300 font-black tracking-wide">
                 MJ KHAN
             </span>
         </span>
@@ -111,12 +111,12 @@
                     </div>
 
                     <div class="grid grid-cols-2 gap-3 min-w-[260px]">
-                        <div class="bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
+                        <div class="theme-card-muted bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
                             <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Total Units</div>
                             <div class="text-2xl text-white font-bold mt-1"><%= totalUnits %></div>
                         </div>
 
-                        <div class="bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
+                        <div class="theme-card-muted bg-[#0B0E14] border border-slate-800 rounded-2xl p-4">
                             <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Occupied</div>
                             <div class="text-2xl text-emerald-400 font-bold mt-1"><%= rentedUnits %></div>
                         </div>
@@ -124,7 +124,7 @@
                 </div>
             </div>
 
-            <div class="xl:col-span-4 bg-[#10141D] border border-slate-800 rounded-3xl p-6 shadow-sm">
+            <div class="xl:col-span-4 theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Collection Health</div>
@@ -148,7 +148,7 @@
 
         <!-- KPI Cards -->
         <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
-            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-slate-600 transition-colors">
+            <div class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-slate-600 transition-colors">
                 <div class="flex items-center justify-between">
                     <div class="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Expected Monthly Rent</div>
                     <div class="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-sm font-bold">₨</div>
@@ -157,7 +157,7 @@
                 <div class="text-[11px] text-slate-500 mt-3 font-mono">Total rent scheduled for current month</div>
             </div>
 
-            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-emerald-700 transition-colors">
+            <div class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-emerald-700 transition-colors">
                 <div class="flex items-center justify-between">
                     <div class="text-[10px] font-bold text-emerald-500 tracking-wider uppercase">Received Rent</div>
                     <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm font-bold">✓</div>
@@ -166,7 +166,7 @@
                 <div class="text-[11px] text-emerald-500/80 mt-3 font-mono"><%= receivedPercent %>% of expected rent collected</div>
             </div>
 
-            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-amber-700 transition-colors">
+            <div class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-amber-700 transition-colors">
                 <div class="flex items-center justify-between">
                     <div class="text-[10px] font-bold text-amber-500 tracking-wider uppercase">Outstanding Rent</div>
                     <div class="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-sm font-bold">!</div>
@@ -175,7 +175,7 @@
                 <div class="text-[11px] text-amber-500/80 mt-3 font-mono"><%= pendingPercent %>% pending from current cycle</div>
             </div>
 
-            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-violet-700 transition-colors">
+            <div class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-violet-700 transition-colors">
                 <div class="flex items-center justify-between">
                     <div class="text-[10px] font-bold text-violet-400 tracking-wider uppercase">Advance Payments</div>
                     <div class="w-10 h-10 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 text-sm font-bold">A</div>
@@ -186,7 +186,7 @@
                 </div>
             </div>
 
-            <div class="bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-slate-600 transition-colors">
+            <div class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl p-5 shadow-sm hover:border-slate-600 transition-colors">
                 <div class="flex items-center justify-between">
                     <div class="text-[10px] font-bold text-slate-500 tracking-wider uppercase">Vacancy Ratio</div>
                     <div class="w-10 h-10 rounded-2xl bg-slate-500/10 border border-slate-500/20 flex items-center justify-center text-slate-300 text-sm font-bold">%</div>
@@ -199,7 +199,7 @@
         </section>
 
         <!-- Cities Summary -->
-        <section class="bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+        <section class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                     <h2 class="text-white text-base font-bold">Portfolio Cities</h2>
@@ -207,7 +207,7 @@
                 </div>
 
                 <% if (canAddCities) { %>
-                    <a href="/cities/add" class="inline-flex items-center justify-center px-3 py-2 bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
+                    <a href="/cities/add" class="theme-secondary-button inline-flex items-center justify-center px-3 py-2 bg-slate-900 border border-slate-700 text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-800 hover:text-white transition-colors">
                         + Add New City
                     </a>
                 <% } %>
@@ -218,7 +218,7 @@
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
                         <% citiesData.forEach(city => { %>
                             <div
-                                class="bg-[#0B0E14] border border-slate-800 rounded-3xl overflow-hidden hover:border-blue-500/40 transition-all <%= canViewCities ? 'cursor-pointer' : '' %>"
+                                class="theme-card-muted bg-[#0B0E14] border border-slate-800 rounded-3xl overflow-hidden hover:border-blue-500/40 transition-all <%= canViewCities ? 'cursor-pointer' : '' %>"
                                 <% if (canViewCities) { %> onclick="window.location.href='/cities/<%= city.id %>'" <% } %>
                             >
                                 <div class="p-5">
@@ -268,7 +268,7 @@
                         <p>No cities available. Add your first city to begin portfolio operations.</p>
 
                         <% if (canAddCities) { %>
-                            <a href="/cities/add" class="inline-flex mt-4 px-4 py-2 bg-white text-black rounded-xl text-xs font-bold hover:bg-slate-200">
+                            <a href="/cities/add" class="theme-inverse-button inline-flex mt-4 px-4 py-2 bg-white text-black rounded-xl text-xs font-bold hover:bg-slate-200">
                                 Add City
                             </a>
                         <% } %>
@@ -278,7 +278,7 @@
         </section>
 
         <!-- Recent Activity Logs -->
-        <section class="bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
+        <section class="theme-card bg-[#10141D] border border-slate-800 rounded-3xl shadow-sm overflow-hidden">
             <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between gap-3">
                 <div>
                     <h3 class="text-white text-base font-bold">Recent Activity</h3>
@@ -295,7 +295,7 @@
             <div class="divide-y divide-slate-800">
                 <% if (activityLogs && activityLogs.length > 0) { %>
                     <% activityLogs.slice(0, 5).forEach(log => { %>
-                        <div class="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 hover:bg-slate-900/50 transition-colors">
+                        <div class="theme-row px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 hover:bg-slate-900/50 transition-colors">
                             <div class="flex items-start md:items-center gap-3">
                                 <span class="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded-lg text-[10px] text-slate-400 font-mono uppercase font-bold">
                                     <%= log.action %>

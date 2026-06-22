@@ -11,8 +11,12 @@
             <a href="/properties/<%= property.id %>/edit" class="px-4 py-1.5 bg-[#1C1C1E] text-zinc-300 text-xs font-semibold rounded border border-[#2E2E30] hover:text-white transition-colors">
                 Edit Property Details
             </a>
-            <form action="/properties/<%= property.id %>/delete" method="POST" class="inline" 
-                  onsubmit="return confirm('WARNING: Are you sure you want to delete this Property? Deleting a property will remove all virtual floors and unrented units.');">
+            <form
+                action="/properties/<%= property.id %>/delete"
+                method="POST"
+                class="inline"
+                data-delete-message="Delete this property? Property ke andar units hon to deletion block ho jayegi aur pehle units remove karni hongi."
+            >
                 <button type="submit" class="px-4 py-1.5 bg-red-950/20 border border-red-900/30 text-red-400 text-xs font-semibold rounded hover:bg-red-900/40 transition-colors">
                     Delete Property
                 </button>
@@ -48,7 +52,7 @@
             <div class="w-full lg:w-auto bg-[#161616] p-4 rounded-lg border border-[#262626] grid grid-cols-2 lg:flex gap-4 lg:gap-8 justify-between shrink-0">
                 <div class="px-2">
                     <div class="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Expected Monthly Rent</div>
-                    <div class="text-lg font-bold text-white font-mono mt-1">₨ <%= rentSummary.expected.toLocaleString() %></div>
+                    <div class="text-lg font-bold text-white font-mono mt-1">₨ <%= Number(rentSummary.expected || 0).toLocaleString() %></div>
                 </div>
                 <div class="px-2 border-l border-[#1F1F1F] max-lg:border-none">
                     <div class="text-[9px] font-bold text-emerald-500/80 uppercase tracking-widest">Rented Units</div>
@@ -64,8 +68,18 @@
         <!-- Add Floor / Section Quick Form Panel -->
         <div class="bg-[#111111]/60 border border-[#1F1F1F] p-4 rounded-lg flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-                <h3 class="text-white text-xs font-bold uppercase tracking-wider">Floors / Property Sections</h3>
+                <div class="flex flex-wrap items-center gap-3">
+                    <h3 class="text-white text-xs font-bold uppercase tracking-wider">Floors / Property Sections</h3>
+                    <span
+                        id="floor-reorder-status"
+                        class="hidden items-center gap-1.5 text-[10px] font-semibold"
+                        aria-live="polite"
+                    ></span>
+                </div>
                 <p class="text-zinc-500 text-[11px]">Define building levels like "Ground Floor", "First Floor", "Block A" to organize rentable rooms or shops.</p>
+                <% if (floors && floors.length > 1) { %>
+                    <p class="text-blue-400/80 text-[10px] mt-1">Use the six-dot handle to move a complete section and its shop up or down.</p>
+                <% } %>
             </div>
             
             <form action="/floors/add" method="POST" class="flex gap-2 w-full md:w-auto">
@@ -79,22 +93,63 @@
         </div>
 
         <!-- Render Floor Sections & Unit Boxes Grid -->
-        <div class="space-y-6">
+        <div
+            class="floor-sort-container space-y-6"
+            data-property-id="<%= property.id %>"
+        >
             <% if (floors && floors.length > 0) { %>
                 <% floors.forEach(floor => { %>
-                    <div class="bg-[#111111] border border-[#262626] rounded-xl p-5 space-y-4 shadow-md">
+                    <div
+                        class="floor-sort-item bg-[#111111] border border-[#262626] rounded-xl p-5 space-y-4 shadow-md"
+                        data-floor-id="<%= floor.id %>"
+                       
+                    >
                         <!-- Floor Header -->
                         <div class="flex justify-between items-center border-b border-[#262626] pb-3">
-                            <div class="flex items-center gap-3">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <% if (floors.length > 1) { %>
+                                    <button
+                                        type="button"
+                                        class="floor-drag-handle w-8 h-8 rounded-lg bg-blue-950/30 border border-blue-500/30 text-blue-300 hover:text-white hover:border-blue-400 cursor-grab active:cursor-grabbing flex items-center justify-center transition-colors"
+                                        title="Hold and drag this complete section up or down"
+                                        aria-label="Move <%= floor.name %> section"
+                                    >
+                                        <svg class="w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <circle cx="8" cy="6" r="1.5"></circle>
+                                            <circle cx="16" cy="6" r="1.5"></circle>
+                                            <circle cx="8" cy="12" r="1.5"></circle>
+                                            <circle cx="16" cy="12" r="1.5"></circle>
+                                            <circle cx="8" cy="18" r="1.5"></circle>
+                                            <circle cx="16" cy="18" r="1.5"></circle>
+                                        </svg>
+                                    </button>
+                                <% } %>
+
                                 <h3 class="text-white font-bold text-sm tracking-tight capitalize"><%= floor.name %></h3>
                                 <span class="bg-[#161616] px-2 py-0.5 border border-[#1F1F1F] rounded-md text-[10px] font-mono font-medium text-zinc-400">
                                     <%= floor.units ? floor.units.length : 0 %> Rentable Unit(s)
                                 </span>
+
+                                <% if (floor.units && floor.units.length > 1) { %>
+                                    <span class="text-[10px] text-zinc-500 font-medium">
+                                        Drag the handle to reorder
+                                    </span>
+                                <% } %>
+
+                                <span
+                                    class="unit-reorder-status hidden items-center gap-1.5 text-[10px] font-semibold"
+                                    data-reorder-status="<%= floor.id %>"
+                                    aria-live="polite"
+                                ></span>
                             </div>
                             
                             <!-- Delete Floor only if it serves 0 units -->
                             <% if (!floor.units || floor.units.length === 0) { %>
-                                <form action="/floors/<%= floor.id %>/delete" method="POST" onsubmit="return confirm('Remove empty floor level?');">
+                                <form
+                                    action="/floors/<%= floor.id %>/delete"
+                                    method="POST"
+                                    data-delete-message="Delete this empty section? This action cannot be undone."
+                                >
                                     <input type="hidden" name="property_id" value="<%= property.id %>">
                                     <button type="submit" class="text-[10px] text-red-400 hover:text-red-300 transition-colors">
                                         Delete Section &times;
@@ -104,7 +159,11 @@
                         </div>
 
                         <!-- Grid representing unit boxes (Green = rented, Red = vacant, Yellow = pending status) -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                        <div
+                            class="unit-sort-grid grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"
+                            data-property-id="<%= property.id %>"
+                            data-floor-id="<%= floor.id %>"
+                        >
                             <% if (floor.units && floor.units.length > 0) { %>
                                 <% floor.units.forEach(unit => { %>
                                                                   <% 
@@ -124,15 +183,37 @@
                                         labelClass = "bg-yellow-500 text-slate-950 border-yellow-600";
                                       }
                                     %>
-                                    <div class="border rounded-xl p-4 flex flex-col justify-between h-28 cursor-pointer select-none transition-all shadow-md <%= statusClass %>"
-                                         onclick="window.location.href='/units/<%= unit.id %>'">
-                                        <div class="flex justify-between items-start">
-                                          <span class="text-xs font-mono font-bold tracking-tight text-slate-950"><%= unit.name %></span>
+                                    <div
+                                        class="unit-sort-item relative border rounded-xl p-4 flex flex-col justify-between h-28 cursor-pointer select-none transition-all shadow-md <%= statusClass %>"
+                                        data-unit-id="<%= unit.id %>"
+                                        data-unit-url="/units/<%= unit.id %>"
+                                       
+                                    >
+                                        <% if (floor.units.length > 1) { %>
+                                            <button
+                                                type="button"
+                                                class="unit-drag-handle absolute top-2 left-2 z-10 w-6 h-6 rounded-md bg-slate-100/95 border border-slate-300 text-slate-600 hover:text-blue-600 hover:border-blue-400 cursor-grab active:cursor-grabbing flex items-center justify-center shadow-sm transition-colors"
+                                                title="Drag to reorder this unit"
+                                                aria-label="Drag <%= unit.name %> to reorder"
+                                            >
+                                                <svg class="w-3.5 h-3.5 pointer-events-none" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                    <circle cx="8" cy="6" r="1.5"></circle>
+                                                    <circle cx="16" cy="6" r="1.5"></circle>
+                                                    <circle cx="8" cy="12" r="1.5"></circle>
+                                                    <circle cx="16" cy="12" r="1.5"></circle>
+                                                    <circle cx="8" cy="18" r="1.5"></circle>
+                                                    <circle cx="16" cy="18" r="1.5"></circle>
+                                                </svg>
+                                            </button>
+                                        <% } %>
+
+                                        <div class="flex justify-between items-start gap-2 <%= floor.units.length > 1 ? 'pl-7' : '' %>">
+                                            <span class="text-xs font-mono font-bold tracking-tight text-slate-950"><%= unit.name %></span>
                                             <span class="text-[8px] font-extrabold tracking-wide px-1.5 py-0.5 rounded border uppercase <%= labelClass %>"><%= unit.status %></span>
                                         </div>
                                                                                 <div class="mt-4 pt-1 border-t border-slate-200">
                                             <div class="text-[9px] text-slate-600 uppercase font-black">Monthly Rent</div>
-                                            <div class="text-xs font-mono font-bold mt-0.5 text-slate-950">₨ <%= (unit.rent_amount / 1000).toFixed(0) %>k</div>
+                                            <div class="text-xs font-mono font-bold mt-0.5 text-slate-950">₨ <%= (Number(unit.rent_amount || 0) / 1000).toFixed(0) %>k</div>
                                         </div>
                                     </div>
                                 <% }); %>
@@ -154,5 +235,292 @@
 
     </div>
 </main>
+
+
+<style>
+    .floor-sort-item,
+    .unit-sort-item {
+        transition:
+            transform 180ms ease,
+            opacity 180ms ease,
+            box-shadow 180ms ease,
+            border-color 180ms ease;
+    }
+
+    .floor-sort-ghost,
+    .unit-sort-ghost {
+        opacity: 0.25 !important;
+        border: 2px dashed #3b82f6 !important;
+    }
+
+    .floor-sort-chosen,
+    .unit-sort-chosen {
+        box-shadow: 0 18px 50px rgba(37, 99, 235, 0.28) !important;
+    }
+
+    .floor-sort-drag,
+    .unit-sort-drag {
+        cursor: grabbing !important;
+        transform: rotate(0.4deg) scale(1.01);
+    }
+
+    .floor-drag-handle,
+    .unit-drag-handle {
+        touch-action: none;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .reorder-saving {
+        pointer-events: none;
+        opacity: 0.72;
+    }
+</style>
+
+<script src="/vendor/sortablejs/Sortable.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const floorContainer = document.querySelector('.floor-sort-container');
+        const floorStatus = document.getElementById('floor-reorder-status');
+
+        function setStatus(element, type, message, autoHide) {
+            if (!element) return;
+
+            element.className =
+                'inline-flex items-center gap-1.5 text-[10px] font-semibold';
+
+            if (type === 'saving') {
+                element.classList.add('text-blue-400');
+                element.innerHTML = `
+                    <svg class="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    <span>${message}</span>
+                `;
+                return;
+            }
+
+            if (type === 'success') {
+                element.classList.add('text-emerald-400');
+                element.textContent = '✓ ' + message;
+            } else {
+                element.classList.add('text-red-400');
+                element.textContent = '! ' + message;
+            }
+
+            if (autoHide !== false) {
+                window.setTimeout(function () {
+                    element.classList.add('hidden');
+                    element.classList.remove('inline-flex');
+                }, type === 'success' ? 1800 : 4500);
+            }
+        }
+
+        async function saveOrder(url, payload) {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json().catch(function () {
+                return {};
+            });
+
+            if (!response.ok || result.success !== true) {
+                throw new Error(
+                    result.message ||
+                    `Unable to save order. Server returned ${response.status}.`
+                );
+            }
+
+            return result;
+        }
+
+        if (typeof window.Sortable !== 'function') {
+            setStatus(
+                floorStatus,
+                'error',
+                'Drag library load nahi hui. Terminal mein npm install sortablejs run karein.',
+                false
+            );
+            console.error(
+                'SortableJS is not loaded. Run "npm install sortablejs" and restart the server.'
+            );
+            return;
+        }
+
+        /*
+         * FLOOR / SECTION ORDER
+         * Ground Floor, Room 2, Room 3 etc. move as complete sections.
+         */
+        if (
+            floorContainer &&
+            floorContainer.querySelectorAll(':scope > .floor-sort-item').length > 1
+        ) {
+            let floorPreviousOrder = [];
+
+            const floorSortable = window.Sortable.create(floorContainer, {
+                animation: 200,
+                dataIdAttr: 'data-floor-id',
+                draggable: '.floor-sort-item',
+                handle: '.floor-drag-handle',
+                direction: 'vertical',
+                forceFallback: true,
+                fallbackOnBody: true,
+                fallbackTolerance: 4,
+                scroll: true,
+                scrollSensitivity: 90,
+                scrollSpeed: 14,
+                swapThreshold: 0.55,
+                ghostClass: 'floor-sort-ghost',
+                chosenClass: 'floor-sort-chosen',
+                dragClass: 'floor-sort-drag',
+
+                onStart: function () {
+                    floorPreviousOrder = floorSortable.toArray();
+                },
+
+                onEnd: async function () {
+                    const newOrder = floorSortable.toArray();
+
+                    if (
+                        floorPreviousOrder.length === 0 ||
+                        floorPreviousOrder.join('|') === newOrder.join('|')
+                    ) {
+                        return;
+                    }
+
+                    floorSortable.option('disabled', true);
+                    floorContainer.classList.add('reorder-saving');
+                    setStatus(floorStatus, 'saving', 'Saving section order...');
+
+                    try {
+                        await saveOrder('/floors/reorder', {
+                            property_id: floorContainer.dataset.propertyId,
+                            ordered_floor_ids: newOrder
+                        });
+
+                        setStatus(floorStatus, 'success', 'Section order saved');
+                    } catch (error) {
+                        floorSortable.sort(floorPreviousOrder, true);
+                        setStatus(
+                            floorStatus,
+                            'error',
+                            'Save failed — old order restored'
+                        );
+                        console.error('Floor reorder failed:', error);
+                    } finally {
+                        floorContainer.classList.remove('reorder-saving');
+                        floorSortable.option('disabled', false);
+                    }
+                }
+            });
+        }
+
+        /*
+         * UNIT / SHOP ORDER
+         * Multiple shops inside the same section can be reordered.
+         */
+        document.querySelectorAll('.unit-sort-grid').forEach(function (grid) {
+            const cards = grid.querySelectorAll('.unit-sort-item');
+
+            let isDragging = false;
+
+            grid.addEventListener('click', function (event) {
+                const card = event.target.closest('.unit-sort-item');
+
+                if (!card || isDragging) return;
+                if (event.target.closest('a, button, form, input, select, textarea')) {
+                    return;
+                }
+
+                const url = card.dataset.unitUrl;
+                if (url) {
+                    window.location.assign(url);
+                }
+            });
+
+            if (cards.length < 2) return;
+
+            const unitStatus = document.querySelector(
+                `[data-reorder-status="${grid.dataset.floorId}"]`
+            );
+
+            let unitPreviousOrder = [];
+
+            const unitSortable = window.Sortable.create(grid, {
+                animation: 180,
+                dataIdAttr: 'data-unit-id',
+                draggable: '.unit-sort-item',
+                handle: '.unit-drag-handle',
+                direction: 'horizontal',
+                forceFallback: true,
+                fallbackOnBody: true,
+                fallbackTolerance: 4,
+                scroll: true,
+                scrollSensitivity: 70,
+                scrollSpeed: 12,
+                swapThreshold: 0.65,
+                ghostClass: 'unit-sort-ghost',
+                chosenClass: 'unit-sort-chosen',
+                dragClass: 'unit-sort-drag',
+
+                onStart: function () {
+                    isDragging = true;
+                    unitPreviousOrder = unitSortable.toArray();
+                },
+
+                onEnd: async function () {
+                    const newOrder = unitSortable.toArray();
+
+                    window.setTimeout(function () {
+                        isDragging = false;
+                    }, 150);
+
+                    if (
+                        unitPreviousOrder.length === 0 ||
+                        unitPreviousOrder.join('|') === newOrder.join('|')
+                    ) {
+                        return;
+                    }
+
+                    unitSortable.option('disabled', true);
+                    grid.classList.add('reorder-saving');
+                    setStatus(unitStatus, 'saving', 'Saving shop order...');
+
+                    try {
+                        await saveOrder('/units/reorder', {
+                            property_id: grid.dataset.propertyId,
+                            floor_id: grid.dataset.floorId,
+                            ordered_unit_ids: newOrder
+                        });
+
+                        setStatus(unitStatus, 'success', 'Shop order saved');
+                    } catch (error) {
+                        unitSortable.sort(unitPreviousOrder, true);
+                        setStatus(
+                            unitStatus,
+                            'error',
+                            'Save failed — old order restored'
+                        );
+                        console.error('Unit reorder failed:', error);
+                    } finally {
+                        grid.classList.remove('reorder-saving');
+                        unitSortable.option('disabled', false);
+                    }
+                }
+            });
+        });
+    });
+</script>
 
 <%- include('../partials/footer') %>
