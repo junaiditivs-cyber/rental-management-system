@@ -1,0 +1,108 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <header class="min-h-16 border-b border-[#1F1F1F] px-6 lg:px-8 py-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 shrink-0">
+        <div class="text-sm text-zinc-500">
+            Cities &gt;
+            <a href="/cities/<%= city.id %>" class="hover:text-blue-400 underline"><%= city.name %></a>
+            &gt;
+            <span class="text-zinc-200">Full Delete Confirmation</span>
+        </div>
+
+        <a href="/cities/<%= city.id %>" class="px-4 py-2 bg-[#1C1C1E] border border-zinc-800 text-zinc-300 text-xs font-semibold rounded-lg hover:text-white transition-colors">
+            Cancel and Go Back
+        </a>
+    </header>
+
+    <div class="p-5 lg:p-8 flex-1 overflow-y-auto">
+        <div class="max-w-3xl mx-auto space-y-6">
+            <div class="rounded-2xl border border-red-500/30 bg-red-950/20 p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-11 h-11 rounded-full bg-red-950/50 border border-red-500/30 text-red-400 flex items-center justify-center shrink-0 font-black">!</div>
+
+                    <div>
+                        <h1 class="text-xl font-black text-white">Delete <%= city.name %> and all linked rental data</h1>
+                        <p class="text-sm text-zinc-400 mt-2 leading-relaxed">
+                            This action permanently removes the city, areas, properties, floors, units, agreements, rent payments, advance records, property assignments, and tenants that become completely orphaned.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Areas</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.areas %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Properties</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.properties %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Floors</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.floors %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Units</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.units %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Agreements</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.agreements %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Rent Payments</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.rentPayments %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Advance Payments</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.advancePayments %></div>
+                </div>
+                <div class="bg-[#111111] border border-[#262626] rounded-xl p-4">
+                    <div class="text-[10px] uppercase font-bold text-zinc-500">Linked Tenants</div>
+                    <div class="text-2xl font-black text-white mt-1"><%= summary.tenants %></div>
+                </div>
+            </div>
+
+            <% if (typeof error_msg !== 'undefined' && error_msg) { %>
+                <div class="rounded-xl border border-red-500/30 bg-red-950/30 px-4 py-3 text-sm text-red-300">
+                    <%= error_msg %>
+                </div>
+            <% } %>
+
+            <form
+                action="/cities/<%= city.id %>/delete"
+                method="POST"
+                class="bg-[#111111] border border-[#262626] rounded-2xl p-6 space-y-5"
+                data-delete-message="FINAL WARNING: This will permanently delete <%= city.name %> and every linked rental record."
+            >
+                <div>
+                    <label for="confirmation_name" class="block text-xs font-bold text-zinc-400 mb-2">
+                        Type the city name exactly to confirm
+                    </label>
+
+                    <input
+                        type="text"
+                        id="confirmation_name"
+                        name="confirmation_name"
+                        required
+                        autocomplete="off"
+                        placeholder="<%= city.name %>"
+                        class="w-full px-4 py-3 bg-[#0A0A0A] border border-zinc-800 rounded-xl text-white text-sm outline-none focus:border-red-500"
+                    >
+                </div>
+
+                <div class="rounded-xl border border-amber-500/20 bg-amber-950/20 px-4 py-3 text-xs text-amber-300 leading-relaxed">
+                    Unrelated cities, users, permissions, activity logs, and tenants still linked elsewhere will not be deleted.
+                </div>
+
+                <button type="submit" class="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-black transition-colors">
+                    Permanently Delete City and All Linked Data
+                </button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>

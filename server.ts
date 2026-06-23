@@ -22,6 +22,19 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_ADMIN_KEY =
+  process.env.SUPABASE_SECRET_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  '';
+
+const supabaseAdmin = SUPABASE_ADMIN_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_ADMIN_KEY, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    })
+  : null;
 
 type AnyRow = Record<string, any>;
 
@@ -885,14 +898,17 @@ const NORMAL_USER_ROUTE_PERMISSIONS: RoutePermissionRule[] = [
   { method: 'POST', path: '/smart-entry', permission: 'add_smart_entry' },
 
   // Cities
-  { method: 'GET', path: '/cities', permission: 'view_cities' },
-  { method: 'GET', path: '/cities/add', permission: 'add_cities' },
-  { method: 'POST', path: '/cities/add', permission: 'add_cities' },
-  { method: 'GET', path: '/cities/:id/edit', permission: 'edit_cities' },
-  { method: 'POST', path: '/cities/:id/edit', permission: 'edit_cities' },
-  { method: 'POST', path: '/cities/:id/delete', permission: 'delete_cities' },
-  { method: 'GET', path: '/cities/:id', permission: 'view_cities' },
+ // Cities
+{ method: 'GET', path: '/cities', permission: 'view_cities' },
+{ method: 'GET', path: '/cities/add', permission: 'add_cities' },
+{ method: 'POST', path: '/cities/add', permission: 'add_cities' },
+{ method: 'GET', path: '/cities/:id/edit', permission: 'edit_cities' },
+{ method: 'POST', path: '/cities/:id/edit', permission: 'edit_cities' },
 
+{ method: 'GET', path: '/cities/:id/delete-confirm', permission: 'delete_cities' },
+{ method: 'POST', path: '/cities/:id/delete', permission: 'delete_cities' },
+
+{ method: 'GET', path: '/cities/:id', permission: 'view_cities' },
   // Areas
   { method: 'GET', path: '/areas', permission: 'view_areas' },
   { method: 'GET', path: '/areas/add', permission: 'add_areas' },
@@ -1090,10 +1106,37 @@ app.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
 // -----------------------------------------
 // CITY CRUD ROUTES
 // -----------------------------------------
-app.get('/cities', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const db = await loadDb();
-  res.render('cities/list', { cities: db.cities });
-}));
+app.get(
+  '/cities',
+  requireAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const db = await loadScopedDb(req);
+
+    const cities = db.cities.map(city => ({
+      ...city,
+      areasCount: db.areas.filter(
+        area => String(area.city_id) === String(city.id)
+      ).length,
+
+      propertiesCount: db.properties.filter(
+        property => String(property.city_id) === String(city.id)
+      ).length
+    }));
+
+    res.render('cities/list', {
+      cities,
+      activeTab: 'cities',
+
+      success_msg: req.query.success_msg
+        ? String(req.query.success_msg)
+        : null,
+
+      error_msg: req.query.error_msg
+        ? String(req.query.error_msg)
+        : null
+    });
+  })
+);
 
 app.get('/cities/add', requireAuth, (req, res) => {
   res.render('cities/add');
@@ -1106,28 +1149,213 @@ app.post('/cities/add', requireAuth, asyncHandler(async (req: any, res: any) => 
   res.redirect('/cities');
 }));
 
-app.get('/cities/:id', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const db = await loadDb();
-  const city = db.cities.find(c => c.id === req.params.id);
-  if (!city) return res.status(404).send('City not registered');
+app.get(
+  '/cities/:id/delete-confirm',
+  requireAuth,
+  requirePermission('delete_cities'),
+  requireSuperAdmin,
+  asyncHandler(async (req: any, res: any) => {
+    const db = await loadDb();
 
-  const areas = db.areas.filter(a => a.city_id === city.id);
-  const properties = db.properties.filter(p => p.city_id === city.id).map(p => {
-    const area = db.areas.find(a => a.id === p.area_id);
-    return { ...p, area_name: area ? area.name : 'Unknown' };
-  });
+    const city = db.cities.find(
+      row => String(row.id) === String(req.params.id)
+    );
 
-  const propertyIds = properties.map(p => p.id);
-  const cityUnits = db.units.filter(u => propertyIds.includes(u.property_id));
-  const unitIds = cityUnits.map(u => u.id);
-  const rentedCount = cityUnits.filter(u => String(u.status).toLowerCase() === 'rented').length;
-  const vacantCount = cityUnits.filter(u => String(u.status).toLowerCase() === 'vacant').length;
-  const pendingRent = db.rent_payments
-    .filter(p => unitIds.includes(p.unit_id) && Number(p.pending_amount) > 0)
-    .reduce((sum, py) => sum + toNumber(py.pending_amount), 0);
+    if (!city) {
+      return res.redirect(
+        '/cities?error_msg=' +
+        encodeURIComponent('City not found.')
+      );
+    }
 
-  res.render('cities/detail', { city, areas, properties, stats: { rentedCount, vacantCount, pendingRent } });
-}));
+    const properties = db.properties.filter(
+      property =>
+        String(property.city_id) === String(city.id)
+    );
+
+    const propertyIds = new Set(
+      properties.map(property => String(property.id))
+    );
+
+    const floors = db.floors.filter(
+      floor =>
+        propertyIds.has(String(floor.property_id))
+    );
+
+    const units = db.units.filter(
+      unit =>
+        propertyIds.has(String(unit.property_id))
+    );
+
+    const unitIds = new Set(
+      units.map(unit => String(unit.id))
+    );
+
+    const agreements = db.rent_agreements.filter(
+      agreement =>
+        unitIds.has(String(agreement.unit_id))
+    );
+
+    const agreementIds = new Set(
+      agreements.map(agreement => String(agreement.id))
+    );
+
+    const rentPayments = db.rent_payments.filter(
+      payment =>
+        unitIds.has(String(payment.unit_id)) ||
+        agreementIds.has(String(payment.agreement_id))
+    );
+
+    const advancePayments = db.advance_payments.filter(
+      payment =>
+        unitIds.has(String(payment.unit_id)) ||
+        agreementIds.has(String(payment.agreement_id))
+    );
+
+    const tenantIds = new Set(
+      [
+        ...agreements.map(
+          agreement => String(agreement.tenant_id || '')
+        ),
+
+        ...rentPayments.map(
+          payment => String(payment.tenant_id || '')
+        ),
+
+        ...advancePayments.map(
+          payment => String(payment.tenant_id || '')
+        )
+      ].filter(Boolean)
+    );
+
+    res.render('cities/delete-confirm', {
+      city,
+
+      summary: {
+        areas: db.areas.filter(
+          area =>
+            String(area.city_id) === String(city.id)
+        ).length,
+
+        properties: properties.length,
+        floors: floors.length,
+        units: units.length,
+        agreements: agreements.length,
+        rentPayments: rentPayments.length,
+        advancePayments: advancePayments.length,
+        tenants: tenantIds.size
+      },
+
+      activeTab: 'cities',
+
+      error_msg: req.query.error_msg
+        ? String(req.query.error_msg)
+        : null,
+
+      success_msg: null
+    });
+  })
+);
+app.get(
+  '/cities/:id',
+  requireAuth,
+  asyncHandler(async (req: any, res: any) => {
+    const db = await loadScopedDb(req);
+
+    const cityBase = db.cities.find(
+      city => String(city.id) === String(req.params.id)
+    );
+
+    if (!cityBase) {
+      return res.status(404).send('City not registered');
+    }
+
+    const areas = db.areas.filter(
+      area =>
+        String(area.city_id) === String(cityBase.id)
+    );
+
+    const properties = db.properties
+      .filter(
+        property =>
+          String(property.city_id) === String(cityBase.id)
+      )
+      .map(property => {
+        const area = db.areas.find(
+          row =>
+            String(row.id) === String(property.area_id)
+        );
+
+        return {
+          ...property,
+          area_name: area ? area.name : 'Unknown'
+        };
+      });
+
+    const city = {
+      ...cityBase,
+      areasCount: areas.length,
+      propertiesCount: properties.length
+    };
+
+    const propertyIds = properties.map(
+      property => String(property.id)
+    );
+
+    const cityUnits = db.units.filter(
+      unit =>
+        propertyIds.includes(String(unit.property_id))
+    );
+
+    const unitIds = cityUnits.map(
+      unit => String(unit.id)
+    );
+
+    const rentedCount = cityUnits.filter(
+      unit =>
+        String(unit.status || '').toLowerCase() === 'rented'
+    ).length;
+
+    const vacantCount = cityUnits.filter(
+      unit =>
+        String(unit.status || '').toLowerCase() === 'vacant'
+    ).length;
+
+    const pendingRent = db.rent_payments
+      .filter(
+        payment =>
+          unitIds.includes(String(payment.unit_id)) &&
+          Number(payment.pending_amount) > 0
+      )
+      .reduce(
+        (sum, payment) =>
+          sum + toNumber(payment.pending_amount),
+        0
+      );
+
+    res.render('cities/detail', {
+      city,
+      areas,
+      properties,
+
+      stats: {
+        rentedCount,
+        vacantCount,
+        pendingRent
+      },
+
+      activeTab: 'cities',
+
+      success_msg: req.query.success_msg
+        ? String(req.query.success_msg)
+        : null,
+
+      error_msg: req.query.error_msg
+        ? String(req.query.error_msg)
+        : null
+    });
+  })
+);
 
 app.get('/cities/:id/edit', requireAuth, asyncHandler(async (req: any, res: any) => {
   const { data: city, error } = await supabase.from('cities').select('*').eq('id', req.params.id).maybeSingle();
@@ -1143,19 +1371,87 @@ app.post('/cities/:id/edit', requireAuth, asyncHandler(async (req: any, res: any
   res.redirect('/cities');
 }));
 
-app.post('/cities/:id/delete', requireAuth, asyncHandler(async (req: any, res: any) => {
-  const { data: linkedProperties, error } = await supabase.from('properties').select('id').eq('city_id', req.params.id).limit(1);
-  if (error) throw error;
-  if (linkedProperties && linkedProperties.length > 0) {
-    return res.status(400).send('Locked: Cannot remove city with active linked property registries.');
-  }
+app.post(
+  '/cities/:id/delete',
+  requireAuth,
+  requirePermission('delete_cities'),
+  requireSuperAdmin,
+  asyncHandler(async (req: any, res: any) => {
+    const cityId = String(req.params.id);
 
-  await supabase.from('areas').delete().eq('city_id', req.params.id);
-  await deleteById('cities', req.params.id);
-  await logActivity('Delete City', `Deleted municipal ID ${req.params.id}.`);
-  res.redirect('/cities');
-}));
+    const confirmationName = String(
+      req.body.confirmation_name || ''
+    ).trim();
 
+    if (!supabaseAdmin) {
+      return res.redirect(
+        `/cities/${cityId}/delete-confirm?error_msg=` +
+        encodeURIComponent(
+          'SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is missing from the server environment.'
+        )
+      );
+    }
+
+    const db = await loadDb();
+
+    const city = db.cities.find(
+      row => String(row.id) === cityId
+    );
+
+    if (!city) {
+      return res.redirect(
+        '/cities?error_msg=' +
+        encodeURIComponent('City not found.')
+      );
+    }
+
+    const actualCityName = String(city.name || '').trim();
+
+    if (
+      confirmationName.toLowerCase() !==
+      actualCityName.toLowerCase()
+    ) {
+      return res.redirect(
+        `/cities/${cityId}/delete-confirm?error_msg=` +
+        encodeURIComponent(
+          'City name confirmation did not match.'
+        )
+      );
+    }
+
+    const { data, error } = await supabaseAdmin.rpc(
+      'delete_city_cascade',
+      {
+        p_city_id: cityId,
+        p_confirmation_name: confirmationName
+      }
+    );
+
+    if (error) {
+      console.error('Full city delete error:', error);
+
+      return res.redirect(
+        `/cities/${cityId}/delete-confirm?error_msg=` +
+        encodeURIComponent(
+          error.message || 'Full city deletion failed.'
+        )
+      );
+    }
+
+    await logActivity(
+      'Full City Delete',
+      `Deleted city ${city.name} and all linked rental data. ` +
+      `Summary: ${JSON.stringify(data?.deleted || {})}`
+    );
+
+    return res.redirect(
+      '/cities?success_msg=' +
+      encodeURIComponent(
+        `City ${city.name} and all linked rental data were deleted successfully.`
+      )
+    );
+  })
+);
 // -----------------------------------------
 // AREA CRUD ROUTES
 // -----------------------------------------

@@ -1,77 +1,213 @@
+```ejs
 <%- include('../partials/header') %>
 <%- include('../partials/sidebar') %>
 
-<main class="flex-1 flex flex-col h-full overflow-hidden">
-    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
-        <div class="text-sm text-zinc-500">Overview &gt; <span class="text-zinc-200">Cities Portfolio</span></div>
-        <a href="/cities/add" class="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded-md hover:bg-zinc-200 transition-all">
-            + New City
-        </a>
-    </header>
+<%
+    const isSuperAdminUser =
+        typeof admin !== 'undefined' &&
+        admin &&
+        String(admin.role || '')
+            .trim()
+            .toLowerCase() === 'super admin';
 
-    <div class="p-8 flex-1 overflow-y-auto space-y-6">
-        <div>
-            <h1 class="text-white text-lg font-bold tracking-tight">Cities Management</h1>
-            <p class="text-zinc-500 text-xs mt-1">Add, update, or remove regional jurisdictions. Deleting is permitted only if no linked properties remain.</p>
+    const canDeleteCities =
+        isSuperAdminUser &&
+        (
+            typeof can !== 'function' ||
+            can('delete_cities')
+        );
+%>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden bg-[#0A0A0A]">
+
+    <!-- Page Header -->
+    <header class="h-16 border-b border-[#1F1F1F] bg-[#0E0E0E] px-8 flex items-center justify-between shrink-0">
+
+        <div class="text-sm text-zinc-500">
+            Overview &gt;
+            <span class="text-zinc-200">
+                Cities Portfolio
+            </span>
         </div>
 
+        <a
+            href="/cities/add"
+            class="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded-md hover:bg-zinc-200 transition-all"
+        >
+            + New City
+        </a>
+
+    </header>
+
+    <!-- Page Content -->
+    <div class="p-8 flex-1 overflow-y-auto space-y-6">
+
+        <div>
+            <h1 class="text-white text-lg font-bold tracking-tight">
+                Cities Management
+            </h1>
+
+            <p class="text-zinc-500 text-xs mt-1">
+                Manage cities and their linked rental portfolio.
+                Full city deletion permanently removes all linked rental records.
+            </p>
+        </div>
+
+        <!-- Warning for Super Admin -->
+        <% if (canDeleteCities) { %>
+            <div class="rounded-xl border border-red-900/30 bg-red-950/20 px-4 py-3">
+                <div class="text-xs font-bold text-red-300">
+                    Full Delete Warning
+                </div>
+
+                <div class="mt-1 text-[11px] leading-relaxed text-red-400/80">
+                    Full Delete permanently removes the selected city and its linked
+                    areas, properties, floors, units, agreements, rent payments and
+                    advance-payment records.
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Cities Table -->
         <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+
             <table class="w-full text-left border-collapse">
+
                 <thead>
                     <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
-                        <th class="p-4">City Name</th>
-                        <th class="p-4">Province</th>
-                        <th class="p-4">Total Areas</th>
-                        <th class="p-4">Total Properties</th>
-                        <th class="p-4 text-right">Actions</th>
+                        <th class="p-4">
+                            City Name
+                        </th>
+
+                        <th class="p-4">
+                            Province
+                        </th>
+
+                        <th class="p-4">
+                            Total Areas
+                        </th>
+
+                        <th class="p-4">
+                            Total Properties
+                        </th>
+
+                        <th class="p-4 text-right">
+                            Actions
+                        </th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-[#1F1F1F] text-sm text-zinc-300">
+
                     <% if (cities && cities.length > 0) { %>
+
                         <% cities.forEach(city => { %>
+
+                            <%
+                                const areasCount =
+                                    Number(city.areasCount || 0);
+
+                                const propertiesCount =
+                                    Number(city.propertiesCount || 0);
+                            %>
+
                             <tr class="hover:bg-[#161616]/30 transition-colors">
+
+                                <!-- City Name -->
                                 <td class="p-4 font-semibold text-white">
-                                    <a href="/cities/<%= city.id %>" class="hover:text-blue-400 font-medium transition-colors">
+                                    <a
+                                        href="/cities/<%= city.id %>"
+                                        class="hover:text-blue-400 font-medium transition-colors"
+                                    >
                                         <%= city.name %>
                                     </a>
                                 </td>
-                                <td class="p-4 text-zinc-400"><%= city.province %></td>
+
+                                <!-- Province -->
+                                <td class="p-4 text-zinc-400">
+                                    <%= city.province || 'Not specified' %>
+                                </td>
+
+                                <!-- Areas Count -->
                                 <td class="p-4 font-mono text-xs text-zinc-400">
-                                    <%= city.areasCount %> Area(s)
+                                    <%= areasCount %>
+                                    Area<%= areasCount === 1 ? '' : 's' %>
                                 </td>
+
+                                <!-- Properties Count -->
                                 <td class="p-4 font-mono text-xs text-zinc-400">
-                                    <%= city.propertiesCount %> Property(s)
+                                    <%= propertiesCount %>
+                                    Propert<%= propertiesCount === 1 ? 'y' : 'ies' %>
                                 </td>
-                                <td class="p-4 text-right space-x-2">
-                                    <a href="/cities/<%= city.id %>/edit" class="text-xs text-zinc-400 hover:text-white bg-[#1A1A1A] border border-[#262626] px-2.5 py-1 rounded transition-colors inline-block">
-                                        Edit
-                                    </a>
-                                    
-                                    <% if (city.propertiesCount === 0 && city.areasCount === 0) { %>
-                                        <form action="/cities/<%= city.id %>/delete" method="POST" class="inline-block" onsubmit="return confirm('Force remove city?');">
-                                            <button type="submit" class="text-xs text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 px-2.5 py-1 rounded transition-colors inline-block font-medium">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    <% } else { %>
-                                        <button disabled class="text-xs text-zinc-600 bg-zinc-900 border border-[#1F1F1F] px-2.5 py-1 rounded cursor-not-allowed inline-block font-medium" title="Linked records exist. Can not delete.">
-                                            Locked
-                                        </button>
-                                    <% } %>
+
+                                <!-- Actions -->
+                                <td class="p-4 text-right">
+
+                                    <div class="inline-flex items-center justify-end gap-2">
+
+                                        <a
+                                            href="/cities/<%= city.id %>"
+                                            class="text-xs text-blue-400 hover:text-blue-300 bg-blue-950/20 border border-blue-900/30 px-2.5 py-1 rounded transition-colors inline-block font-medium"
+                                        >
+                                            View
+                                        </a>
+
+                                        <a
+                                            href="/cities/<%= city.id %>/edit"
+                                            class="text-xs text-zinc-400 hover:text-white bg-[#1A1A1A] border border-[#262626] px-2.5 py-1 rounded transition-colors inline-block font-medium"
+                                        >
+                                            Edit
+                                        </a>
+
+                                        <% if (canDeleteCities) { %>
+                                            <a
+                                                href="/cities/<%= city.id %>/delete-confirm"
+                                                class="text-xs text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 px-2.5 py-1 rounded transition-colors inline-block font-medium"
+                                                title="Permanently delete this city and all linked rental data"
+                                            >
+                                                Full Delete
+                                            </a>
+                                        <% } %>
+
+                                    </div>
+
                                 </td>
+
                             </tr>
+
                         <% }); %>
+
                     <% } else { %>
+
                         <tr>
-                            <td colspan="5" class="p-8 text-center text-zinc-500">
-                                No cities records. Click Add New City to register cities.
+                            <td
+                                colspan="5"
+                                class="p-10 text-center text-zinc-500"
+                            >
+                                <div class="text-sm font-medium">
+                                    No city records found.
+                                </div>
+
+                                <a
+                                    href="/cities/add"
+                                    class="inline-flex mt-4 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-zinc-200 transition-colors"
+                                >
+                                    Add New City
+                                </a>
                             </td>
                         </tr>
+
                     <% } %>
+
                 </tbody>
+
             </table>
+
         </div>
+
     </div>
+
 </main>
 
 <%- include('../partials/footer') %>
+```
