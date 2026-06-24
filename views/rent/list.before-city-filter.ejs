@@ -1,0 +1,147 @@
+<%- include('../partials/header') %>
+<%- include('../partials/sidebar') %>
+
+<main class="flex-1 flex flex-col h-full overflow-hidden">
+    <!-- Header -->
+    <header class="h-16 border-b border-[#1F1F1F] px-8 flex items-center justify-between shrink-0">
+        <div class="text-sm text-zinc-500">Overview &gt; <span class="text-zinc-200">Rent Payments &amp; Ledger</span></div>
+        <a href="/rent/collect" class="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded hover:bg-zinc-200 transition-all">
+            + Collect Rent Bank
+        </a>
+    </header>
+
+    <div class="p-8 flex-1 overflow-y-auto space-y-6">
+        <div>
+            <h1 class="text-white text-xl font-bold tracking-tight">Financial Rent Ledgers</h1>
+            <p class="text-zinc-500 text-xs mt-1">Audit historic collections, outstanding balance records, and receipts on JazzCash, EasyPaisa, Cash and Wire Transfers.</p>
+        </div>
+
+        <!-- Metric mini cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-[#111111] border border-[#262626] p-4 rounded-lg">
+                <span class="text-[9px] uppercase font-bold text-zinc-500">Collected Capital This Month</span>
+                <div class="text-xl font-bold text-emerald-400 mt-1">₨ <%= stats.totalCollected.toLocaleString() %></div>
+            </div>
+            <div class="bg-[#111111] border border-[#262626] p-4 rounded-lg">
+                <span class="text-[9px] uppercase font-bold text-zinc-500 font-bold text-amber-500">Pending Arrears Balance</span>
+                <div class="text-xl font-bold text-amber-400 mt-1">₨ <%= stats.totalPending.toLocaleString() %></div>
+            </div>
+            <div class="bg-[#111111] border border-[#262626] p-4 rounded-lg">
+                <span class="text-[9px] uppercase font-bold text-zinc-500">Total Ledgers Logged</span>
+                <div class="text-xl font-bold text-white mt-1"><%= payments.length %> Payment(s)</div>
+            </div>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="bg-[#111111] border border-[#262626] p-4 rounded-xl flex flex-wrap justify-between items-center gap-4">
+            <form action="/rent" method="GET" class="flex flex-wrap gap-4 items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-zinc-500 text-[11px] font-mono whitespace-nowrap">Filter Month:</span>
+                    <select name="month" onchange="this.form.submit()" class="bg-[#161616] border border-[#262626] rounded px-3 py-1 text-xs text-zinc-300">
+                        <option value="">All Months</option>
+                        <% const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; %>
+                        <% months.forEach((m, idx) => { %>
+                            <option value="<%= idx + 1 %>" <%= typeof selectedMonth !== 'undefined' && Number(selectedMonth) === idx + 1 ? 'selected' : '' %>><%= m %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-zinc-500 text-[11px] font-mono whitespace-nowrap">Status:</span>
+                    <select name="status" onchange="this.form.submit()" class="bg-[#161616] border border-[#262626] rounded px-3 py-1 text-xs text-zinc-300">
+                        <option value="">All States</option>
+                        <option value="Paid" <%= typeof selectedStatus !== 'undefined' && selectedStatus === 'Paid' ? 'selected' : '' %>>Paid</option>
+                        <option value="Partial" <%= typeof selectedStatus !== 'undefined' && selectedStatus === 'Partial' ? 'selected' : '' %>>Partial</option>
+                        <option value="Unpaid" <%= typeof selectedStatus !== 'undefined' && selectedStatus === 'Unpaid' ? 'selected' : '' %>>Unpaid</option>
+                    </select>
+                </div>
+            </form>
+            <a href="/rent" class="text-xs text-zinc-500 hover:text-white underline">Clear filters</a>
+        </div>
+
+        <div class="bg-[#111111] border border-[#262626] rounded-xl overflow-hidden shadow-lg">
+            <table class="w-full text-left border-collapse text-xs font-mono">
+                <thead>
+                    <tr class="border-b border-[#1F1F1F] bg-[#161616] text-[10px] font-bold text-zinc-500 uppercase tracking-wider font-sans">
+                        <th class="p-4">Paid On</th>
+                        <th class="p-4">Tenant Tenant</th>
+                        <th class="p-4">Unit Block / Level</th>
+                        <th class="p-4">Period</th>
+                        <th class="p-4">Negotiated Rate</th>
+                        <th class="p-4">Paid (PKR)</th>
+                        <th class="p-4">Outstanding (PKR)</th>
+                        <th class="p-4">Method</th>
+                        <th class="p-4 font-sans">Receipt Status</th>
+                        <th class="p-4 text-right font-sans">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#1F1F1F] text-zinc-300">
+                    <% if (payments && payments.length > 0) { %>
+                        <% payments.forEach(p => { %>
+                            <tr class="hover:bg-[#161616]/20 transition-colors">
+                                <td class="p-4 font-sans text-zinc-400"><%= p.payment_date %></td>
+                                <td class="p-4 font-sans font-semibold text-white">
+                                    <a href="/tenants/<%= p.tenant_id %>" class="hover:text-blue-400 underline decoration-dotted"><%= p.tenant_name %></a>
+                                </td>
+                                <td class="p-4 font-sans text-zinc-300">
+                                    <div class="font-medium"><a href="/units/<%= p.unit_id %>" class="hover:underline"><%= p.unit_name %></a></div>
+                                    <div class="text-[10px] text-zinc-500 capitalize"><%= p.property_name %></div>
+                                </td>
+                                <td class="p-4 font-sans">
+                                    <% const monthsMap = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; %>
+                                    <span class="bg-[#161616] border border-[#212121] px-1.5 py-0.5 rounded text-[10px] text-zinc-400 font-bold"><%= monthsMap[p.rent_month - 1] %> <%= p.rent_year %></span>
+                                </td>
+                                <td class="p-4 text-zinc-400">₨ <%= p.total_rent.toLocaleString() %></td>
+                                <td class="p-4 text-emerald-400 font-bold text-sm">₨ <%= p.paid_amount.toLocaleString() %></td>
+                                <td class="p-4 text-amber-500 font-bold">₨ <%= p.pending_amount.toLocaleString() %></td>
+                                <td class="p-4 font-sans text-zinc-400 capitalize">
+                                    <%= p.payment_method %>
+                                </td>
+                                <td class="p-4 font-sans shrink-0">
+                                    <div class="flex items-center gap-2">
+                                        <% if (p.payment_proof_url) { %>
+                                            <a href="<%= p.payment_proof_url %>" target="_blank" title="Download Payment Receipt Attachment File" class="px-1.5 py-0.5 text-blue-400 hover:text-blue-300 border border-blue-900/40 bg-blue-950/20 rounded font-bold font-mono text-[9px]" referrerpolicy="no-referrer">
+                                                FILE &darr;
+                                            </a>
+                                        <% } %>
+                                        
+                                        <% if(p.status.toLowerCase() === 'paid') { %>
+                                            <span class="text-emerald-400 text-[10px] bg-emerald-950/40 border border-emerald-900/30 px-2.5 py-0.5 rounded font-bold">Paid</span>
+                                        <% } else if(p.status.toLowerCase() === 'partial') { %>
+                                            <span class="text-amber-400 text-[10px] bg-amber-950/40 border border-[#452D12]/30 px-2 py-0.5 rounded font-bold font-sans">Partial</span>
+                                        <% } else { %>
+                                            <span class="text-red-400 text-[10px] bg-red-950/40 border border-red-900/30 px-2.5 py-0.5 rounded font-bold">Arrears</span>
+                                        <% } %>
+                                    </div>
+                                </td>
+                                <td class="p-4 text-right font-sans space-x-1.5 whitespace-nowrap shrink-0">
+                                    <% if (Number(p.pending_amount || 0) > 0) { %>
+    <a href="/rent/<%= p.id %>/partial" class="text-xs text-emerald-300 hover:text-emerald-200 bg-emerald-950/30 border border-emerald-700/30 px-2.5 py-1 rounded inline-block font-sans">
+        Receive Balance
+    </a>
+<% } %>
+                                    <a href="/rent/<%= p.id %>/edit" class="text-xs text-zinc-300 hover:text-white bg-[#1C1C1E] border border-zinc-800 px-2.5 py-1 rounded inline-block font-sans">
+                                        Edit
+                                    </a>
+                                    <form action="/rent/<%= p.id %>/delete" method="POST" class="inline" onsubmit="return confirm('WARNING: Are you sure you want to delete this payment record? This will permanently erase the transaction from historical ledgers.');">
+                                        <button type="submit" class="text-xs text-red-400 hover:text-red-300 bg-red-950/20 border border-red-900/30 px-2.5 py-1 rounded font-sans">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="10" class="p-12 text-center text-zinc-550 font-sans">
+                                No rent ledger transactions recorded matching filter. Keep your properties active.
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<%- include('../partials/footer') %>
