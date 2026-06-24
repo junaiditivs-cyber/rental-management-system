@@ -2310,29 +2310,41 @@ app.post('/agreements/:id/delete', requireAuth, asyncHandler(async (req: any, re
 // -----------------------------------------
 app.get('/rent', requireAuth, asyncHandler(async (req: any, res: any) => {
   const db = await loadDb();
-  const { month, status } = req.query;
+  const { month, status, city_id } = req.query;
 
   let list = db.rent_payments.map(p => {
     const tenant = db.tenants.find(t => t.id === p.tenant_id);
     const unit = db.units.find(u => u.id === p.unit_id);
     const prop = unit ? db.properties.find(pr => pr.id === unit.property_id) : null;
+    const city = prop ? db.cities.find(c => c.id === prop.city_id) : null;
+
     return {
       ...p,
       tenant_name: tenant ? tenant.name : 'Unknown',
       unit_name: unit ? unit.name : 'Unknown',
-      property_name: prop ? prop.name : 'Unknown'
+      property_name: prop ? prop.name : 'Unknown',
+      city_id: city ? city.id : '',
+      city_name: city ? city.name : 'Unknown City'
     };
   });
 
   if (month) list = list.filter(p => Number(p.rent_month) === Number(month));
   if (status) list = list.filter(p => String(p.status).toLowerCase() === String(status).toLowerCase());
+  if (city_id) list = list.filter(p => String(p.city_id) === String(city_id));
 
   const stats = {
     totalCollected: list.reduce((sum, p) => sum + toNumber(p.paid_amount), 0),
     totalPending: list.reduce((sum, p) => sum + toNumber(p.pending_amount), 0)
   };
 
-  res.render('rent/list', { payments: list, stats, selectedMonth: month || '', selectedStatus: status || '' });
+  res.render('rent/list', {
+    payments: list,
+    stats,
+    cities: db.cities,
+    selectedMonth: month || '',
+    selectedStatus: status || '',
+    selectedCity: city_id || ''
+  });
 }));
 
 app.get('/rent/collect', requireAuth, asyncHandler(async (req: any, res: any) => {

@@ -36,6 +36,19 @@
         <div class="bg-[#111111] border border-[#262626] p-4 rounded-xl flex flex-wrap justify-between items-center gap-4">
             <form action="/rent" method="GET" class="flex flex-wrap gap-4 items-center">
                 <div class="flex items-center gap-2">
+                    <span class="text-zinc-500 text-[11px] font-mono whitespace-nowrap">City:</span>
+                    <select name="city_id" onchange="this.form.submit()" class="bg-[#161616] border border-[#262626] rounded px-3 py-1 text-xs text-zinc-300">
+                        <option value="">All Cities</option>
+                        <% const rentCities = typeof cities !== 'undefined' && cities ? cities : []; %>
+                        <% rentCities.forEach(city => { %>
+                            <option value="<%= city.id %>" <%= typeof selectedCity !== 'undefined' && String(selectedCity) === String(city.id) ? 'selected' : '' %>>
+                                <%= city.name %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
                     <span class="text-zinc-500 text-[11px] font-mono whitespace-nowrap">Filter Month:</span>
                     <select name="month" onchange="this.form.submit()" class="bg-[#161616] border border-[#262626] rounded px-3 py-1 text-xs text-zinc-300">
                         <option value="">All Months</option>
@@ -66,6 +79,7 @@
                         <th class="p-4">Paid On</th>
                         <th class="p-4">Tenant Tenant</th>
                         <th class="p-4">Unit Block / Level</th>
+                        <th class="p-4">City</th>
                         <th class="p-4">Period</th>
                         <th class="p-4">Negotiated Rate</th>
                         <th class="p-4">Paid (PKR)</th>
@@ -86,6 +100,9 @@
                                 <td class="p-4 font-sans text-zinc-300">
                                     <div class="font-medium"><a href="/units/<%= p.unit_id %>" class="hover:underline"><%= p.unit_name %></a></div>
                                     <div class="text-[10px] text-zinc-500 capitalize"><%= p.property_name %></div>
+                                </td>
+                                <td class="p-4 font-sans text-zinc-300 capitalize">
+                                    <%= p.city_name || 'Unknown City' %>
                                 </td>
                                 <td class="p-4 font-sans">
                                     <% const monthsMap = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]; %>
@@ -133,7 +150,7 @@
                         <% }) %>
                     <% } else { %>
                         <tr>
-                            <td colspan="10" class="p-12 text-center text-zinc-550 font-sans">
+                            <td colspan="11" class="p-12 text-center text-zinc-550 font-sans">
                                 No rent ledger transactions recorded matching filter. Keep your properties active.
                             </td>
                         </tr>
