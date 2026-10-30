@@ -22,6 +22,13 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false
+  }
+});
 const SUPABASE_ADMIN_KEY =
   process.env.SUPABASE_SECRET_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -141,7 +148,7 @@ async function deleteById(table: string, id: string) {
 async function logActivity(action: string, details: string) {
   const { error } = await supabase.from('activity_logs').insert({ action, details });
   if (error) console.error('Activity log error:', error.message);
-} 
+}
 const PERMISSION_GROUPS = [
   {
     title: 'Dashboard',
@@ -363,22 +370,7 @@ function requirePermission(permissionKey: string) {
   };
 }
 
-async function ensureDefaultAdmin() {
-  const { data, error } = await supabase.from('admin_users').select('id').limit(1);
-  if (error) {
-    console.error('Admin check error:', error.message);
-    return;
-  }
-  if (!data || data.length === 0) {
-  const { error: insertError } = await supabase.from('admin_users').insert({
-  username: 'admin@gmail.com',
-  password_hash: 'admin123',
-  full_name: 'Super Admin',
-  role: 'Super Admin'
-});
-    if (insertError) console.error('Default admin insert error:', insertError.message);
-  }
-}
+
 
 // Setup Middleware
 app.set('trust proxy', 1);
@@ -389,8 +381,11 @@ app.use(
   '/vendor/sortablejs',
   express.static(path.join(process.cwd(), 'node_modules', 'sortablejs'))
 );
+if (!process.env.SESSION_SECRET) {
+  throw new Error('SESSION_SECRET is required.');
+}
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'pk_rental_secret_9922',
+ secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -466,72 +461,131 @@ app.post('/login', asyncHandler(async (req: any, res: any) => {
 
   if (!rawUsername || !password) {
     return res.render('auth/login', {
-      error_msg: 'Gmail address and password are required.'
+      error_msg: 'Email and password are required.'
     });
   }
 
-  const gmailUsername = rawUsername.includes('@')
+  const email = rawUsername.includes('@')
     ? rawUsername
     : `${rawUsername}@gmail.com`;
 
-  const usernameWithoutDomain = gmailUsername.split('@')[0];
+  const { data, error } =
+    await supabaseAuth.auth.signInWithPassword({
+      email,
+      password
+    });
 
-  const possibleUsernames = [
-    gmailUsername,
-    usernameWithoutDomain
-  ];
-
-  const { data: matchedAdmins, error } = await supabase
-    .from('admin_users')
-    .select('*')
-    .in('username', possibleUsernames)
-    .limit(2);
-
-  if (error) {
-    throw error;
-  }
-
-  const admins = matchedAdmins || [];
-
-  const admin =
-    admins.find(
-      row =>
-        String(row.username || '').trim().toLowerCase() === gmailUsername
-    ) ||
-    admins.find(
-      row =>
-        String(row.username || '').trim().toLowerCase() === usernameWithoutDomain
-    ) ||
-    null;
-
-  if (!admin || String(admin.password_hash || '') !== password) {
+  if (error || !data?.user) {
     return res.render('auth/login', {
-      error_msg: 'Incorrect Gmail address or password.'
+      error_msg: 'Incorrect email or password.'
     });
   }
 
-  (req.session as any).admin = {
-    id: admin.id,
-    username: admin.username,
-    role: admin.role || 'User',
-    full_name: admin.full_name || admin.username
-  };
 
-  await logActivity(
-    'Admin Login',
-    `User ${admin.username} authorized successfully.`
+if (!supabaseAdmin) {
+  return res.status(503).send('User management is unavailable.');
+}
+
+const { data: existingAdmin, error: profileError } =
+  await supabaseAdmin
+    .from('admin_users')
+    .select('id, username, full_name, role')
+    .eq('auth_user_id', data.user.id)
+    .maybeSingle();
+
+if (profileError) throw profileError;
+
+let admin = existingAdmin;
+
+if (!admin) {
+  const email = String(data.user.email || '').trim().toLowerCase();
+
+  if (!email) {
+    return res.status(403).send('A verified email is required.');
+  }
+
+  const { error: insertError } = await supabaseAdmin
+    .from('admin_users')
+    .upsert({
+      auth_user_id: data.user.id,
+      username: email,
+      full_name: email,
+      role: 'User',
+      password_hash: 'AUTH_MANAGED_NO_LOCAL_PASSWORD'
+    }, {
+      onConflict: 'username',
+      ignoreDuplicates: true
+    });
+
+  if (insertError) {
+    console.error('Profile creation error:', insertError.message);
+    return res.status(500).send('Unable to create user profile.');
+  }
+
+  const { data: linkedAdmin, error: linkedError } =
+    await supabaseAdmin
+      .from('admin_users')
+      .select('id, username, full_name, role')
+      .eq('auth_user_id', data.user.id)
+      .maybeSingle();
+
+  if (linkedError) throw linkedError;
+
+  if (!linkedAdmin) {
+    return res.status(403).send(
+      'Email is already associated with another application account.'
+    );
+  }
+
+  admin = linkedAdmin;
+
+const { error: permissionError } = await supabaseAdmin
+  .from('user_permissions')
+  .upsert(
+    {
+      user_id: admin.id,
+      permission_key: 'view_dashboard',
+      is_allowed: true
+    },
+    {
+      onConflict: 'user_id,permission_key'
+    }
   );
 
-  req.session.save((sessionError: any) => {
-    if (sessionError) {
-      console.error('Session save error:', sessionError);
+if (permissionError) {
+  console.error(
+    'Default dashboard permission error:',
+    permissionError.message
+  );
 
-      return res.render('auth/login', {
-        error_msg: 'Login session could not be saved. Please try again.'
-      });
+  return res.status(500).send(
+    'Unable to configure dashboard access.'
+  );
+}
+
+}
+
+  req.session.regenerate((sessionError: any) => {
+    if (sessionError) {
+      console.error('Session regeneration failed:', sessionError);
+      return res.status(500).send('Unable to start session.');
     }
 
-    return res.redirect('/');
+    (req.session as any).admin = {
+      id: admin.id,
+      username: admin.username,
+      role: admin.role || 'User',
+      full_name: admin.full_name || admin.username
+    };
+
+    req.session.save((saveError: any) => {
+      if (saveError) {
+        console.error('Session save failed:', saveError);
+        return res.status(500).send('Unable to save session.');
+      }
+
+      return res.redirect('/');
+    });
   });
 }));
 // -----------------------------------------
@@ -566,44 +620,102 @@ app.get('/users/add', requireAuth, requirePermission('create_users'), (req: any,
   });
 });
 
+
 app.post('/users/add', requireAuth, requirePermission('create_users'), asyncHandler(async (req: any, res: any) => {
   const currentAdmin = (req.session as any)?.admin;
-  const { full_name, username, password, role } = req.body;
 
-  if (!username || !password) {
-    return res.render('users/add', {
-      activeTab: 'users',
-      error_msg: 'Username and password are required.'
-    });
+  const fullName = String(req.body.full_name || '').trim();
+  const email = String(req.body.username || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+  const requestedRole = String(req.body.role || 'User');
+
+  const showError = (message: string) => res.render('users/add', {
+    activeTab: 'users',
+    error_msg: message
+  });
+
+  if (!supabaseAdmin) {
+    return showError('Supabase Auth administration is not configured.');
   }
 
-  const finalRole = isSuperAdmin(currentAdmin) ? (role || 'User') : 'User';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return showError('Please enter a valid email address.');
+  }
 
-  const { data: existingUser, error: existingError } = await supabase
+  if (password.length < 8) {
+    return showError('Password must contain at least 8 characters.');
+  }
+
+  const finalRole = isSuperAdmin(currentAdmin) &&
+    requestedRole === 'Super Admin'
+      ? 'Super Admin'
+      : 'User';
+
+  const { data: existingProfile, error: existingError } = await supabase
     .from('admin_users')
     .select('id')
-    .eq('username', username)
+    .eq('username', email)
     .maybeSingle();
 
   if (existingError) throw existingError;
 
-  if (existingUser) {
-    return res.render('users/add', {
-      activeTab: 'users',
-      error_msg: 'This username already exists.'
-    });
+  if (existingProfile) {
+    return showError('An application user with this email already exists.');
   }
 
-  await insertOne('admin_users', {
-    full_name: full_name || username,
-    username,
-    password_hash: password,
-    role: finalRole
-  });
+  const { data: authData, error: authError } =
+    await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: false
+    });
 
-  await logActivity('Create User', `Created user account: ${username}`);
-  res.redirect('/users?success_msg=' + encodeURIComponent('User created successfully.'));
+  if (authError || !authData?.user) {
+    console.error('Auth user creation failed:', authError?.message);
+    return showError(
+      'Unable to create the authentication account. The email may already be registered.'
+    );
+  }
+
+  const authUserId = authData.user.id;
+
+  const { error: profileError } = await supabaseAdmin
+    .from('admin_users')
+    .insert({
+      username: email,
+      full_name: fullName || email,
+      password_hash: 'AUTH_MANAGED_NO_LOCAL_PASSWORD',
+      role: finalRole,
+      auth_user_id: authUserId
+    });
+
+  if (profileError) {
+    console.error('Application profile creation failed:', profileError);
+
+    const { error: rollbackError } =
+      await supabaseAdmin.auth.admin.deleteUser(authUserId);
+
+    if (rollbackError) {
+      console.error('Auth rollback failed:', rollbackError);
+    }
+
+    return showError(
+      'Unable to complete user creation. Contact the administrator.'
+    );
+  }
+
+  try {
+    await logActivity('Create User', `Created user account: ${email}`);
+  } catch (logError) {
+    console.error('User created, but activity logging failed:', logError);
+  }
+
+  return res.redirect(
+    '/users?success_msg=' +
+    encodeURIComponent('User created successfully.')
+  );
 }));
+
 
 app.get('/users/:id/edit', requireAuth, requirePermission('edit_users'), asyncHandler(async (req: any, res: any) => {
   const currentAdmin = (req.session as any)?.admin;
@@ -938,7 +1050,7 @@ const NORMAL_USER_ROUTE_PERMISSIONS: RoutePermissionRule[] = [
   { method: 'POST', path: '/units/reorder', permission: 'edit_units' },
   { method: 'GET', path: '/units/:id/edit', permission: 'edit_units' },
   { method: 'POST', path: '/units/:id/edit', permission: 'edit_units' },
-  
+
   { method: 'POST', path: '/units/:id/delete', permission: 'delete_units' },
   { method: 'GET', path: '/units/:id', permission: 'view_units' },
 
@@ -1698,7 +1810,7 @@ app.post(
       encodeURIComponent('Property deleted successfully.')
     );
   })
-);  
+);
 // -----------------------------------------
 // FLOOR ROUTES
 // -----------------------------------------
@@ -2393,7 +2505,7 @@ app.post('/rent/collect', requireAuth, asyncHandler(async (req: any, res: any) =
   });
 
   await updateById('units', ag.unit_id, { status: recStatus === 'Paid' ? 'Rented' : 'Pending' });
-  await logActivity('Collect Rent', `Collected monthly rent ₨ ${paid.toLocaleString()} for unit ${ag.unit_id}.`);
+  await logActivity('Collect Rent', `Collected monthly rent â‚¨ ${paid.toLocaleString()} for unit ${ag.unit_id}.`);
   res.redirect(`/units/${ag.unit_id}`);
 }));
 
@@ -2617,7 +2729,7 @@ app.post('/advance/add', requireAuth, asyncHandler(async (req: any, res: any) =>
     payment_method: payment_method || 'Cash',
     notes: notes || ''
   });
-  await logActivity('Collect Advance', `Advance security ₨ ${toNumber(amount).toLocaleString()} recorded inside logs.`);
+  await logActivity('Collect Advance', `Advance security â‚¨ ${toNumber(amount).toLocaleString()} recorded inside logs.`);
   res.redirect('/advance?success_msg=' + encodeURIComponent('Security Deposit Advance payment successfully tracked.'));
 }));
 
@@ -2871,7 +2983,7 @@ app.post('/smart-entry', requireAuth, asyncHandler(async (req: any, res: any) =>
       payment_method: payment_method || 'Cash',
       notes: payment_remarks || 'Advance deposit tracked fully through Smart Entry.'
     });
-    await logActivity('Collect Advance', `Advance security ₨ ${finalAdvanceAmount.toLocaleString()} recorded for unit ${chosenUnitId}.`);
+    await logActivity('Collect Advance', `Advance security â‚¨ ${finalAdvanceAmount.toLocaleString()} recorded for unit ${chosenUnitId}.`);
   }
 
   if (record_first_rent === 'yes' && finalMonthlyRent > 0) {
@@ -2892,7 +3004,7 @@ app.post('/smart-entry', requireAuth, asyncHandler(async (req: any, res: any) =>
       payment_method: payment_method || 'Cash',
       notes: payment_remarks || 'First month rent paid inside Smart Entry wizard.'
     });
-    await logActivity('Collect Rent', `Smart Entry auto-collected rent ₨ ${finalMonthlyRent.toLocaleString()} for Month ${rentMonth}/${rentYear}.`);
+    await logActivity('Collect Rent', `Smart Entry auto-collected rent â‚¨ ${finalMonthlyRent.toLocaleString()} for Month ${rentMonth}/${rentYear}.`);
   }
 
   await logActivity('Smart Entry Success', `Unified entry successfully stored for unit ID ${chosenUnitId}.`);
@@ -2910,12 +3022,11 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // Start Express Listener only for local development
+// Start the local server without creating a default administrator
 if (!process.env.VERCEL) {
-  ensureDefaultAdmin().then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Open http://localhost:${PORT}`);
-    });
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Open http://localhost:${PORT}`);
   });
 }
 
